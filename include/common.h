@@ -545,6 +545,8 @@ struct precision
   int l_max_pol_g; /**< number of momenta in Boltzmann hierarchy for photon polarization (scalar), at least 4 */
   int l_max_dr;   /**< number of momenta in Boltzmann hierarchy for decay radiation, at least 4 */
   int l_max_ur;   /**< number of momenta in Boltzmann hierarchy for relativistic neutrino/relics (scalar), at least 4 */
+  // TK added GDM here
+  int l_max_gdm;   /**< number of momenta in Boltzmann hierarchy for GDM (scalar), at least 4 */
   int l_max_ncdm;   /**< number of momenta in Boltzmann hierarchy for relativistic neutrino/relics (scalar), at least 4 */
   int l_max_g_ten;     /**< number of momenta in Boltzmann hierarchy for photon temperature (tensor), at least 4 */
   int l_max_pol_g_ten; /**< number of momenta in Boltzmann hierarchy for photon polarization (tensor), at least 4 */

@@ -58,6 +58,12 @@ struct background
 		     not [delta p/delta rho] in the synchronous or
 		     newtonian gauge!!!) */
 
+   /** - TK added GDM parameters here */
+   double w_gdm; /*** eq of state parameter of the GDM */
+   double ceff2_gdm; /*** effective sound speed of the GDM */
+   double cvis2_gdm; /*** viscosity parameter of the GDM */
+   double Omega0_gdm; /*** fractional energy density today of the GDM */
+
   short use_ppf; /**< flag switching on PPF perturbation equations
                     instead of true fluid equations for
                     perturbations. It could have been defined inside
@@ -167,6 +173,10 @@ struct background
   int index_bg_rho_dcdm;      /**< dcdm density */
   int index_bg_rho_dr;        /**< dr density */
 
+  /* TK added stuff for keeping track of GDM */
+  int index_bg_rho_gdm;       /**< GDM density */
+
+
   int index_bg_phi_scf;       /**< scalar field value */
   int index_bg_phi_prime_scf; /**< scalar field derivative wrt conformal time */
   int index_bg_V_scf;         /**< scalar field potential V */
@@ -263,6 +273,10 @@ struct background
   //@{
 
   short has_cdm;       /**< presence of cold dark matter? */
+
+  /* TK added stuff for checking for GDM */
+  short has_gdm;       /**< presence of generalised dark matter? */
+
   short has_dcdm;      /**< presence of decaying cold dark matter? */
   short has_dr;        /**< presence of relativistic decay radiation? */
   short has_scf;       /**< presence of a scalar field? */

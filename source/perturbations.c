@@ -147,6 +147,10 @@ int perturb_init(
     if (ppt->perturbations_verbose > 0)
       printf("Computing sources\n");
   }
+  // /* TK modified the following to check for either CDM OR GDM */
+  //  class_test((ppt->gauge == synchronous) && ((pba->has_cdm == _FALSE_) && (pba->has_gdm == _FALSE_)),
+  //             ppt->error_message,
+  //             "In the synchronous gauge, it is not self-consistent to assume no CDM or GDM: the it is used to define the initial timelike hypersurface. You can either add a negligible amount of CDM or switch to newtonian gauge");
 
   class_test((ppt->gauge == synchronous) && (pba->has_cdm == _FALSE_),
              ppt->error_message,
@@ -581,6 +585,11 @@ int perturb_indices_of_perturbs(
   ppt->has_source_delta_scf = _FALSE_;
   ppt->has_source_delta_dr = _FALSE_;
   ppt->has_source_delta_ur = _FALSE_;
+
+  /* TK added GDM here: */
+  ppt->has_source_delta_gdm = _FALSE_;
+  ppt->has_source_theta_gdm = _FALSE_;
+
   ppt->has_source_delta_ncdm = _FALSE_;
   ppt->has_source_theta_m = _FALSE_;
   ppt->has_source_theta_g = _FALSE_;
@@ -671,6 +680,11 @@ int perturb_indices_of_perturbs(
           ppt->has_source_delta_fld = _TRUE_;
         if (pba->has_scf == _TRUE_)
           ppt->has_source_delta_scf = _TRUE_;
+
+        /* TK added GDM here */
+        if (pba->has_gdm == _TRUE_)
+          ppt->has_source_delta_gdm = _TRUE_;
+
         if (pba->has_ur == _TRUE_)
           ppt->has_source_delta_ur = _TRUE_;
         if (pba->has_dr == _TRUE_)
@@ -703,6 +717,10 @@ int perturb_indices_of_perturbs(
           ppt->has_source_theta_dr = _TRUE_;
         if (pba->has_ncdm == _TRUE_)
           ppt->has_source_theta_ncdm = _TRUE_;
+        /* TK added GDM here */
+        if (pba->has_gdm == _TRUE_)
+          ppt->has_source_theta_gdm = _TRUE_;
+
       }
 
       if (ppt->has_cl_number_count == _TRUE_) {
@@ -745,6 +763,10 @@ int perturb_indices_of_perturbs(
       class_define_index(ppt->index_tp_delta_g,    ppt->has_source_delta_g,   index_type,1);
       class_define_index(ppt->index_tp_delta_b,    ppt->has_source_delta_b,   index_type,1);
       class_define_index(ppt->index_tp_delta_cdm,  ppt->has_source_delta_cdm, index_type,1);
+      /* TK added GDM here */
+      class_define_index(ppt->index_tp_delta_gdm,  ppt->has_source_delta_gdm, index_type,1);
+
+      class_define_index(ppt->index_tp_theta_m,    ppt->has_source_theta_m,   index_type,1);
       class_define_index(ppt->index_tp_delta_dcdm, ppt->has_source_delta_dcdm,index_type,1);
       class_define_index(ppt->index_tp_delta_fld,  ppt->has_source_delta_fld, index_type,1);
       class_define_index(ppt->index_tp_delta_scf,  ppt->has_source_delta_scf, index_type,1);
@@ -765,6 +787,8 @@ int perturb_indices_of_perturbs(
       class_define_index(ppt->index_tp_phi_prime,  ppt->has_source_phi_prime, index_type,1);
       class_define_index(ppt->index_tp_phi_plus_psi,ppt->has_source_phi_plus_psi,index_type,1);
       class_define_index(ppt->index_tp_psi,        ppt->has_source_psi,       index_type,1);
+      /* TK added GDM here */
+      class_define_index(ppt->index_tp_theta_gdm,  ppt->has_source_theta_gdm, index_type,1);
       class_define_index(ppt->index_tp_h,          ppt->has_source_h,         index_type,1);
       class_define_index(ppt->index_tp_h_prime,    ppt->has_source_h_prime,   index_type,1);
       class_define_index(ppt->index_tp_eta,        ppt->has_source_eta,       index_type,1);
@@ -1883,6 +1907,8 @@ int perturb_workspace_init(
   if (_scalars_) {
     ppw->max_l_max = MAX(ppr->l_max_g, ppr->l_max_pol_g);
     if (pba->has_ur == _TRUE_) ppw->max_l_max = MAX(ppw->max_l_max, ppr->l_max_ur);
+    /* TK added GDM here */
+    // if (pba->has_gdm == _TRUE_) ppw->max_l_max = MAX(ppw->max_l_max, ppr->l_max_gdm);
     if (pba->has_ncdm == _TRUE_) ppw->max_l_max = MAX(ppw->max_l_max, ppr->l_max_ncdm);
     if (pba->has_dr == _TRUE_) ppw->max_l_max = MAX(ppw->max_l_max, ppr->l_max_dr);
   }
@@ -2507,6 +2533,11 @@ int perturb_prepare_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles,"delta_ur",pba->has_ur);
       class_store_columntitle(ppt->scalar_titles,"theta_ur",pba->has_ur);
       class_store_columntitle(ppt->scalar_titles,"shear_ur",pba->has_ur);
+      /* TK added GDM here */
+      class_store_columntitle(ppt->scalar_titles,"delta_gdm",pba->has_gdm);
+      class_store_columntitle(ppt->scalar_titles,"theta_gdm",pba->has_gdm);
+      class_store_columntitle(ppt->scalar_titles,"shear_gdm",pba->has_gdm);
+
       /* Cold dark matter */
       class_store_columntitle(ppt->scalar_titles,"delta_cdm",pba->has_cdm);
       class_store_columntitle(ppt->scalar_titles,"theta_cdm",pba->has_cdm);
@@ -3076,6 +3107,19 @@ int perturb_vector_init(
     class_define_index(ppv->index_pt_delta_cdm,pba->has_cdm,index_pt,1); /* cdm density */
     class_define_index(ppv->index_pt_theta_cdm,pba->has_cdm && (ppt->gauge == newtonian),index_pt,1); /* cdm velocity */
 
+
+    /* TK added GDM here */
+
+    class_define_index(ppv->index_pt_delta_gdm,pba->has_gdm,index_pt,1); /* density of GDM */
+    class_define_index(ppv->index_pt_theta_gdm,pba->has_gdm,index_pt,1); /* velocity of GDM */
+    class_define_index(ppv->index_pt_shear_gdm,pba->has_gdm,index_pt,1); /* shear of GDM */
+
+    // TK : removed this and all l >= 3 for GDM
+    // ppv->l_max_gdm = ppr->l_max_gdm;
+    // class_define_index(ppv->index_pt_l3_gdm,pba->has_gdm,index_pt,ppv->l_max_gdm-2);  additional momenta in Boltzmann hierarchy (beyond l=0,1,2,3)
+    // /* TK : I'm not sure what that means. Should this be a thing GDM has? */
+
+
     /* dcdm */
 
     class_define_index(ppv->index_pt_delta_dcdm,pba->has_dcdm,index_pt,1); /* dcdm density */
@@ -3479,6 +3523,31 @@ int perturb_vector_init(
             ppw->pv->y[ppw->pv->index_pt_theta_cdm];
         }
       }
+
+      /* TK added GDM here */
+
+      if (pba->has_gdm == _TRUE_) {
+
+        ppv->y[ppv->index_pt_delta_gdm] =
+          ppw->pv->y[ppw->pv->index_pt_delta_gdm];
+
+        ppv->y[ppv->index_pt_theta_gdm] =
+          ppw->pv->y[ppw->pv->index_pt_theta_gdm];
+
+        ppv->y[ppv->index_pt_shear_gdm] =
+          ppw->pv->y[ppw->pv->index_pt_shear_gdm];
+
+        // TK : removing this for now
+        // // TK : do we need the following for GDM?
+        // ppv->y[ppv->index_pt_l3_gdm] =
+        //   ppw->pv->y[ppw->pv->index_pt_l3_gdm];
+
+        // for (l=4; l <= ppv->l_max_gdm; l++)
+        //   ppv->y[ppv->index_pt_delta_gdm+l] =
+        //     ppw->pv->y[ppw->pv->index_pt_delta_gdm+l];
+
+      }
+
 
       if (pba->has_dcdm == _TRUE_) {
 
@@ -4060,6 +4129,10 @@ int perturb_initial_conditions(struct precision * ppr,
   double a,a_prime_over_a;
   double w_fld,dw_over_da_fld,integral_fld;
   double delta_ur=0.,theta_ur=0.,shear_ur=0.,l3_ur=0.,eta=0.,delta_cdm=0.,alpha, alpha_prime;
+  /* TK added GDM here */
+  double delta_gdm=0.,theta_gdm=0.,shear_gdm=0.;
+  // TK : removed l3_gdm
+  // double l3_gdm=0.;
   double delta_dr=0;
   double q,epsilon,k2;
   int index_q,n_ncdm,idx;
@@ -4104,6 +4177,12 @@ int perturb_initial_conditions(struct precision * ppr,
 
     if (pba->has_cdm == _TRUE_) {
       rho_m += ppw->pvecback[pba->index_bg_rho_cdm];
+    }
+
+    /* TK added GDM here
+    Adding GDM to rho_m unlike ur species */
+    if (pba->has_gdm == _TRUE_) {
+      rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
     }
 
     if (pba->has_dcdm == _TRUE_) {
@@ -4154,6 +4233,10 @@ int perturb_initial_conditions(struct precision * ppr,
        Indeed the exact solution of Friedmann when there is only radiation and matter in
        the universe is
        a = [H(t_0)^2 Omega_m(t_0) a(t_0)^3 / 4] x [tau^2 + 4 tau / omega]
+    */
+
+    /*
+    TK does adding GDM here (tho rho_m) screw up the solution of a in terms of tau?
     */
     om = a*rho_m/sqrt(rho_r);
 
@@ -4259,6 +4342,50 @@ int perturb_initial_conditions(struct precision * ppr,
         if (pba->has_dr == _TRUE_) delta_dr = delta_ur;
 
       }
+
+
+            /* TK added GDM here
+            The gdm initial conditions are based on arXiv:1605.00649 */
+            // GDM initial conditions defined here
+            if (pba->has_gdm == _TRUE_) {
+
+              // delta_gdm = ppw->pv->y[ppw->pv->index_pt_delta_g]*(-3.)*( -1./4. + ( 3.*ppt->ceff2_gdm - 5.*pba->w_gdm )/8. );
+              delta_gdm = 3./4.*ppw->pv->y[ppw->pv->index_pt_delta_g];
+              // printf("delta_gdm = %e\n", delta_gdm);
+
+              // TK changed the original initial delta_gdm that included curvature terms based on photon density to be much simpler:
+              // delta_gdm = ktau_two*( -1./4. + ( 3.*ppt->ceff2_gdm - 5.*pba->w_gdm )/8. );
+              // printf("delta_gdm = %e\n", delta_gdm);
+              /* density of gdm based on photon density like other species above */
+
+              // theta_gdm = - k*ktau_three*( 1./16.*ppt->ceff2_gdm + 2.*ppt->cvis2_gdm/3./(4.*fracnu+15.) );
+              theta_gdm = 0.;
+              /* velocity of gdm. No curvature, s2_sq or 'omega' dependence is assumed here */
+
+              if (theta_gdm != 0.0) {
+                printf("theta_gdm set in initial conditions = %e\n", theta_gdm);
+              }
+
+              // shear_gdm = ktau_two/(45.+12.*fracnu) * 8.*ppt->cvis2_gdm;
+              shear_gdm = 0.;
+
+              if (shear_gdm != 0.0) {
+                printf("shear_gdm set in initial conditions = %e\n", shear_gdm);
+              }
+
+              //* shear of gdm. Again, no curvature, s2_sq or 'omega' dependence is assumed here  */
+
+              // l3_gdm = ktau_three*2./7./(12.*fracnu+45.)* ppr->curvature_ini;
+              // TK: Not sure what l=3 should be for gdm.
+              // l3_gdm = 0.;
+
+              ppw->pv->y[ppw->pv->index_pt_delta_gdm] = delta_gdm;
+              ppw->pv->y[ppw->pv->index_pt_theta_gdm] = theta_gdm;
+              ppw->pv->y[ppw->pv->index_pt_shear_gdm] = shear_gdm;
+
+            }
+
+
 
       /* synchronous metric perturbation eta */
       //eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om)) /  s2_squared;
@@ -5304,6 +5431,13 @@ int perturb_total_stress_energy(
   double delta_ur=0.;
   double theta_ur=0.;
   double shear_ur=0.;
+
+  // TK added GDM here
+  double delta_gdm=0.;
+  double theta_gdm=0.;
+  double shear_gdm=0.;
+
+
   double rho_delta_ncdm=0.;
   double rho_plus_p_theta_ncdm=0.;
   double rho_plus_p_shear_ncdm=0.;
@@ -5454,6 +5588,17 @@ int perturb_total_stress_energy(
       ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_ur]*delta_ur;
       rho_plus_p_tot += 4./3. * ppw->pvecback[pba->index_bg_rho_ur];
     }
+
+    /* TK added GDM contribution here */
+
+    if (pba->has_gdm == _TRUE_) {
+      ppw->delta_rho = ppw->delta_rho + ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm];
+      ppw->rho_plus_p_theta = ppw->rho_plus_p_theta + (pba->w_gdm + 1.)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];
+      ppw->rho_plus_p_shear = ppw->rho_plus_p_shear + (pba->w_gdm + 1.)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_shear_gdm];
+      ppw->delta_p += pba->w_gdm*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm];
+      rho_plus_p_tot += (pba->w_gdm + 1.) * ppw->pvecback[pba->index_bg_rho_gdm];
+    }
+
 
     /* non-cold dark matter contribution */
     if (pba->has_ncdm == _TRUE_) {
@@ -5623,6 +5768,13 @@ int perturb_total_stress_energy(
         rho_m += ppw->pvecback[pba->index_bg_rho_cdm];
       }
 
+      /* TK included GDM too */
+
+      if (pba->has_gdm == _TRUE_) {
+        delta_rho_m += ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_delta_gdm];
+        rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
+      }
+
       /* include decaying cold dark matter */
 
       if (pba->has_dcdm == _TRUE_) {
@@ -5664,6 +5816,12 @@ int perturb_total_stress_energy(
         if (ppt->gauge == newtonian)
           rho_plus_p_theta_m += ppw->pvecback[pba->index_bg_rho_cdm]*y[ppw->pv->index_pt_theta_cdm];
         rho_plus_p_m += ppw->pvecback[pba->index_bg_rho_cdm];
+      }
+
+      /* TK also added GDM to theta_m */
+      if (pba->has_gdm == _TRUE_) {
+        rho_plus_p_theta_m += (pba->w_gdm + 1.)*ppw->pvecback[pba->index_bg_rho_gdm]*y[ppw->pv->index_pt_theta_gdm];
+        rho_plus_p_m += (pba->w_gdm + 1.)*ppw->pvecback[pba->index_bg_rho_gdm];
       }
 
       if (pba->has_dcdm == _TRUE_) {
@@ -6080,6 +6238,7 @@ int perturb_sources(
       /* cdm is always on in synchronous gauge, see error message above that checks gauge and has_cdm */
       if (ppt->has_source_h == _TRUE_)
         _set_source_(ppt->index_tp_h) = - 2 * y[ppw->pv->index_pt_delta_cdm];
+        // TK this is a problem. Need to add GDM here? Because we do want to replace CDM with GDM
 
       if (ppt->has_source_h_prime == _TRUE_)
         _set_source_(ppt->index_tp_h_prime) = pvecmetric[ppw->index_mt_h_prime];
@@ -6110,6 +6269,11 @@ int perturb_sources(
     /* delta_cdm */
     if (ppt->has_source_delta_cdm == _TRUE_) {
       _set_source_(ppt->index_tp_delta_cdm) = y[ppw->pv->index_pt_delta_cdm];
+    }
+
+    /* TK added GDM here for source delta_gdm */
+    if (ppt->has_source_delta_gdm == _TRUE_) {
+      _set_source_(ppt->index_tp_delta_gdm) = y[ppw->pv->index_pt_delta_gdm];
     }
 
     /* delta_dcdm */
@@ -6180,6 +6344,11 @@ int perturb_sources(
     /* theta_cdm */
     if (ppt->has_source_theta_cdm == _TRUE_) {
       _set_source_(ppt->index_tp_theta_cdm) = y[ppw->pv->index_pt_theta_cdm];
+    }
+
+    /* TK added GDM here as source theta_gdm */
+    if (ppt->has_source_theta_gdm == _TRUE_) {
+      _set_source_(ppt->index_tp_theta_gdm) = y[ppw->pv->index_pt_theta_gdm];
     }
 
     /* theta_dcdm */
@@ -6316,6 +6485,11 @@ int perturb_print_variables(double tau,
   double delta_dcdm=0.,theta_dcdm=0.;
   double delta_dr=0.,theta_dr=0.,shear_dr=0., f_dr=1.0;
   double delta_ur=0.,theta_ur=0.,shear_ur=0.,l4_ur=0.;
+  // TK added GDM here
+  double delta_gdm=0.,theta_gdm=0.,shear_gdm=0.;
+  // TK removed l4_gdm
+  // double l4_gdm=0.;
+
   double delta_rho_scf=0., rho_plus_p_theta_scf=0.;
   double delta_scf=0., theta_scf=0.;
   /** - ncdm sector begins */
@@ -6432,7 +6606,12 @@ int perturb_print_variables(double tau,
         theta_cdm = y[ppw->pv->index_pt_theta_cdm];
       }
     }
-
+    // TK added GDM here
+    if (pba->has_gdm == _TRUE_) {
+      delta_gdm = y[ppw->pv->index_pt_delta_gdm];
+      theta_gdm = y[ppw->pv->index_pt_theta_gdm];
+      shear_gdm = y[ppw->pv->index_pt_shear_gdm];
+      }
     /* gravitational potentials */
     if (ppt->gauge == synchronous) {
 
@@ -6588,7 +6767,61 @@ int perturb_print_variables(double tau,
       }
 
     }
+    // TK commented this out
+    // /* converting synchronous variables to newtonian ones */
+    // if (ppt->gauge == synchronous) {
 
+    //   /* density and velocity perturbations (comment out if you wish to keep synchronous variables) */
+
+    //   delta_g -= 4. * pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;
+    //   theta_g += k*k*alpha;
+
+    //   delta_b -= 3. * pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;
+    //   theta_b += k*k*alpha;
+
+    //   if (pba->has_ur == _TRUE_) {
+    //     delta_ur -= 4. * pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;
+    //     theta_ur += k*k*alpha;
+    //   }
+
+    //   if (pba->has_dr == _TRUE_) {
+    //     delta_dr += (-4.*a*H+a*pba->Gamma_dcdm*pvecback[pba->index_bg_rho_dcdm]/pvecback[pba->index_bg_rho_dr])*alpha;
+
+    //     theta_dr += k*k*alpha;
+    //   }
+
+    //   if (pba->has_cdm == _TRUE_) {
+    //     delta_cdm -= 3. * pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;
+    //     theta_cdm += k*k*alpha;
+    //   }
+
+    //   // TK added GDM here. I figure this looks like 3(1+w)*H*a*alpha
+    //   if (pba->has_gdm == _TRUE_) {
+    //     delta_gdm -= 3.*(1+pba->w_gdm) * pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;
+    //     if (delta_gdm ==0.0)
+    //     {
+    //     printf("delta_gdm after 6770~ after subtraction = %e \n", delta_gdm);
+    //     }
+    //     theta_gdm += k*k*alpha;
+    //   }
+
+    //   if (pba->has_ncdm == _TRUE_) {
+    //     for(n_ncdm=0; n_ncdm < pba->N_ncdm; n_ncdm++){
+    //       /** - --> Do gauge transformation of delta, deltaP/rho (?) and theta using -= 3aH(1+w_ncdm) alpha for delta. */
+    //     }
+    //   }
+
+    //   if (pba->has_dcdm == _TRUE_) {
+    //     delta_dcdm += alpha*(-a*pba->Gamma_dcdm-3.*a*H);
+    //     theta_dcdm += k*k*alpha;
+    //   }
+
+    //   if (pba->has_scf == _TRUE_) {
+    //     delta_scf += alpha*(-3.0*H*(1.0+pvecback[pba->index_bg_p_scf]/pvecback[pba->index_bg_rho_scf]));
+    //     theta_scf += k*k*alpha;
+    //   }
+
+    // }
     //    fprintf(ppw->perturb_output_file," ");
     /** - --> Handle (re-)allocation */
     if (ppt->scalar_perturbations_data[ppw->index_ikout] == NULL){
@@ -6626,6 +6859,22 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, delta_ur, pba->has_ur, storeidx);
     class_store_double(dataptr, theta_ur, pba->has_ur, storeidx);
     class_store_double(dataptr, shear_ur, pba->has_ur, storeidx);
+
+    /* TK added GDM to be stored here */
+    class_store_double(dataptr, delta_gdm, pba->has_gdm, storeidx);
+    // if ((-0.1 < delta_gdm) && (delta_gdm < 1e-1)) {
+    // if (delta_gdm != 0.0) {
+    //   printf("delta_gdm being stored = %e\n", delta_gdm);
+    // }
+    class_store_double(dataptr, theta_gdm, pba->has_gdm, storeidx);
+    if (theta_gdm != 0.0) {
+      printf("theta_gdm being stored = %e\n", theta_gdm);
+    }
+    class_store_double(dataptr, shear_gdm, pba->has_gdm, storeidx);
+    if (shear_gdm != 0.0) {
+      printf("shear_gdm being stored = %e\n", shear_gdm);
+    }
+
     /* Cold dark matter */
     class_store_double(dataptr, delta_cdm, pba->has_cdm, storeidx);
     class_store_double(dataptr, theta_cdm, pba->has_cdm, storeidx);
@@ -7392,6 +7641,76 @@ int perturb_derivs(double tau,
           }
         }
       }
+    }
+
+/** - ---> TK added GDM here */
+    // there are the gdm equations of evolution / gdm evolution equations /
+    // time evolution of gdm density perturbations / gdm velocity perturbations / gdm shear perturbations
+
+    if (pba->has_gdm == _TRUE_) {
+
+      /** - -----> gdm density */
+      dy[pv->index_pt_delta_gdm] =
+        // standard term
+        -(1+pba->w_gdm)*(y[pv->index_pt_theta_gdm] + metric_continuity)
+        // non-standard term, non-zero if if ceff2_gdm not w_gdm
+        +3.*(pba->w_gdm - ppt->ceff2_gdm)*a_prime_over_a*(y[pv->index_pt_delta_gdm] + 3.*(1+pba->w_gdm)*a_prime_over_a*y[pv->index_pt_theta_gdm]/k/k);
+        // TK That very last term is not quite what we get with GDM,
+        // but I'm not sure exactly how to add the GDM term as it depends also on the GDM sound speed cg2 (different from ceff2_gdm)
+        // The last term really should have a factor of 3.*(cg2 - ceff2_gdm) multiplying it
+
+        /** - -----> gdm velocity */
+        dy[pv->index_pt_theta_gdm] =
+          // standard term with extra coefficient (3 ceff2_gdm), normally equal to one
+          k2*( ppt->ceff2_gdm*y[pv->index_pt_delta_gdm]/(1+pba->w_gdm) -s2_squared*y[pv->index_pt_shear_gdm]) + metric_euler
+          // TK leaving s2_sq term in there for now. As long as there's no curvature it'll be 1 anyway.
+          // TK this matches what we have as long as shear = 2/3 w/(1+w) pi_g where pi_g = anisotropic stress amplitude in Hu
+          // non-standard term, non-zero if ceff2_gdm not 1/3
+          -(1.- (3.*ppt->ceff2_gdm))*a_prime_over_a*y[pv->index_pt_theta_gdm];
+
+        // printf("d/dt of theta_gdm = %e\n", dy[pv->index_pt_theta_gdm]);
+
+        /** - -----> exact gdm shear */
+        // dy[pv->index_pt_shear_gdm] =
+        //   0.5*(
+        //    // standard term
+        //    8./15.*ppt->cvis2_gdm*(y[pv->index_pt_theta_gdm]+metric_shear)-3./5.*k*s_l[3]/s_l[2]*y[pv->index_pt_shear_gdm+1]);
+        //    // TK : utterly unsure about this shear eq. Just following ur species exactly for now.
+
+        /** - -----> TK : Or following ur species code for fluid approximations "a la Hu"
+          Assume shear sigma = 2/3 w/(1+w) pi_g where pi_g = anisotropic stress amplitude
+          Also assume sigma^dot = 2/3 w/(1+w) pi_g^dot i.e. the only time evolving quantity on the RHS is pi_g
+          Eq. (12) in Hu the becomes:
+          sigma^dot + 3 a^dot / a sigma = 2/3 (theta + metric_shear)
+          */
+        dy[pv->index_pt_shear_gdm] =
+              -3.*a_prime_over_a*y[pv->index_pt_shear_gdm]
+              +(8.*ppt->cvis2_gdm /3. /(1+pba->w_gdm))*(y[pv->index_pt_theta_gdm]+metric_shear);
+
+        // if (dy[pv->index_pt_shear_gdm] != 0.0)
+        // {
+        //   printf("d/dt of shear_gdm = %e\n", dy[pv->index_pt_shear_gdm]);
+        // }
+
+
+
+        // TK removed the following
+        // /** - -----> exact ur l=3 */
+        // l = 3;
+        // dy[pv->index_pt_l3_gdm] = k/(2.*l+1.)*
+        //   (l*2.*s_l[l]*s_l[2]*y[pv->index_pt_shear_gdm]-(l+1.)*s_l[l+1]*y[pv->index_pt_l3_gdm+1]);
+
+        // /** - -----> exact ur l>3 */
+        // for (l = 4; l < pv->l_max_gdm; l++) {
+        //   dy[pv->index_pt_delta_gdm+l] = k/(2.*l+1)*
+        //     (l*s_l[l]*y[pv->index_pt_delta_gdm+l-1]-(l+1.)*s_l[l+1]*y[pv->index_pt_delta_gdm+l+1]);
+        // }
+
+        // /** - -----> exact ur lmax_gdm */
+        // l = pv->l_max_gdm;
+        // dy[pv->index_pt_delta_gdm+l] =
+        //   k*(s_l[l]*y[pv->index_pt_delta_gdm+l-1]-(1.+l)*cotKgen*y[pv->index_pt_delta_gdm+l]);
+
     }
 
     /** - ---> non-cold dark matter (ncdm): massive neutrinos, WDM, etc. */

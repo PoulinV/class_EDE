@@ -310,6 +310,22 @@ int background_functions(
     rho_m += pvecback[pba->index_bg_rho_cdm];
   }
 
+  /* TK added GDM here */
+  if (pba->has_gdm == _TRUE_) {
+    pvecback[pba->index_bg_rho_gdm] = pba->Omega0_gdm * pow(pba->H0,2) / pow(a_rel, 3*(1 + pba->w_gdm) );
+    rho_tot += pvecback[pba->index_bg_rho_gdm];
+    p_tot += (pba->w_gdm) * pvecback[pba->index_bg_rho_gdm];
+    // rho_m += pvecback[pba->index_bg_rho_gdm];
+    // rho_r += pvecback[pba->index_bg_rho_ur];
+
+
+    // TK , VP : the following was only to try to debug GDM. It simply copies CDM
+    // pvecback[pba->index_bg_rho_gdm] = pba->Omega0_cdm * pow(pba->H0,2) / pow(a_rel, 3 );
+    // rho_tot += pvecback[pba->index_bg_rho_cdm];
+    // rho_m += pvecback[pba->index_bg_rho_cdm];
+
+
+  }
   /* dcdm */
   if (pba->has_dcdm == _TRUE_) {
     /* Pass value of rho_dcdm to output */
@@ -760,6 +776,8 @@ int background_indices(
   /** - initialize all flags: which species are present? */
 
   pba->has_cdm = _FALSE_;
+  /* TK added GDM here */
+  pba->has_gdm = _FALSE_;
   pba->has_ncdm = _FALSE_;
   pba->has_dcdm = _FALSE_;
   pba->has_dr = _FALSE_;
@@ -771,6 +789,10 @@ int background_indices(
 
   if (pba->Omega0_cdm != 0.)
     pba->has_cdm = _TRUE_;
+
+  /* TK added GDM here */
+  if (pba->Omega0_gdm != 0.)
+    pba->has_gdm = _TRUE_;
 
   if (pba->Omega0_ncdm_tot != 0.)
     pba->has_ncdm = _TRUE_;
@@ -818,6 +840,11 @@ int background_indices(
 
   /* - index for rho_cdm */
   class_define_index(pba->index_bg_rho_cdm,pba->has_cdm,index_bg,1);
+
+  /* TK added this to initialise index for rho_gdm */
+  /* - index for rho_gdm */
+  class_define_index(pba->index_bg_rho_gdm,pba->has_gdm,index_bg,1);
+
 
   /* - indices for ncdm. We only define the indices for ncdm1
      (density, pressure, pseudo-pressure), the other ncdm indices
@@ -1873,6 +1900,12 @@ int background_initial_conditions(
   Omega_rad = pba->Omega0_g;
   if (pba->has_ur == _TRUE_)
     Omega_rad += pba->Omega0_ur;
+
+  // TK added GDM here
+  // Not sure if GDM should be added here
+  // if (pba->has_gdm == _TRUE_)
+  //   Omega_rad += pba->Omega0_gdm;
+
   rho_rad = Omega_rad*pow(pba->H0,2)/pow(a/pba->a_today,4);
   if (pba->has_ncdm == _TRUE_){
     /** - We must add the relativistic contribution from NCDM species */
@@ -2077,6 +2110,11 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_rho_g],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_b],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_cdm],pba->has_cdm,storeidx);
+    /* TK added this to store rho_GDM index */
+    class_store_double(dataptr,pvecback[pba->index_bg_rho_gdm],pba->has_gdm,storeidx);
+    // TK , VP to debug background
+    // printf(" a %e rhi_cdm %e\n", pba->a_today/pvecback[pba->index_bg_a]-1.,pvecback[pba->index_bg_rho_cdm]);
+    // printf(" a %e rhi_gdm %e\n", pba->a_today/pvecback[pba->index_bg_a]-1.,pvecback[pba->index_bg_rho_gdm]);
     if (pba->has_ncdm == _TRUE_){
       for (n=0; n<pba->N_ncdm; n++){
         class_store_double(dataptr,pvecback[pba->index_bg_rho_ncdm1+n],_TRUE_,storeidx);
@@ -2179,6 +2217,13 @@ int background_derivs(
   rho_M = pvecback[pba->index_bg_rho_b];
   if (pba->has_cdm)
     rho_M += pvecback[pba->index_bg_rho_cdm];
+
+  // TK added GDM here
+  // Not sure about this one
+  if (pba->has_gdm)
+    rho_M += pvecback[pba->index_bg_rho_gdm];
+
+
   dy[pba->index_bi_D] = y[pba->index_bi_D_prime];
   dy[pba->index_bi_D_prime] = -a*H*y[pba->index_bi_D_prime] + 1.5*a*a*rho_M*y[pba->index_bi_D];
 

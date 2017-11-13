@@ -759,6 +759,53 @@ int input_read_parameters(
 
   Omega_tot += pba->Omega0_cdm;
 
+    /** - TK added GDM here */
+
+    // For the GDM eq of state w_gdm
+    class_call(parser_read_double(pfc,"w_gdm",&param1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+    if (flag1 == _TRUE_)
+      pba->w_gdm = param1;
+
+    // For the GDM effective sound speed ceff2_gdm
+    class_call(parser_read_double(pfc,"ceff2_gdm",&param1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+    if (flag1 == _TRUE_)
+      ppt->ceff2_gdm = param1;
+
+    // For the GDM viscosity parameter cvis2_gdm
+    class_call(parser_read_double(pfc,"cvis2_gdm",&param1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+    if (flag1 == _TRUE_)
+      ppt->cvis2_gdm = param1;
+
+    // For the GDM fractional energy density today Omega0_gdm
+    class_call(parser_read_double(pfc,"Omega_gdm",&param1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+    class_call(parser_read_double(pfc,"omega_gdm",&param2,&flag2,errmsg),
+               errmsg,
+               errmsg);
+    class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
+               errmsg,
+               "In input file, you can only enter one of Omega_gdm or omega_gdm, choose one");
+    if (flag1 == _TRUE_)
+      pba->Omega0_gdm = param1;
+    if (flag2 == _TRUE_)
+      pba->Omega0_gdm = param2/pba->h/pba->h;
+
+    Omega_tot += pba->Omega0_gdm;
+
+
+    printf("This is what was read in for GDM parameters \nw_gdm = %f    ceff^2_gdm = %f    cvis^2_gdm = %f   Omega_gdm = %f\n", pba->w_gdm, ppt->ceff2_gdm, ppt->cvis2_gdm, pba->Omega0_gdm);
+
+
+
+
+
   /** - Omega_0_dcdmdr (DCDM) */
   class_call(parser_read_double(pfc,"Omega_dcdmdr",&param1,&flag1,errmsg),
              errmsg,
@@ -2609,6 +2656,8 @@ int input_read_parameters(
   class_read_int("l_max_pol_g",ppr->l_max_pol_g);
   class_read_int("l_max_dr",ppr->l_max_dr);
   class_read_int("l_max_ur",ppr->l_max_ur);
+  // TK added GDM here
+  class_read_int("l_max_gdm",ppr->l_max_gdm);
   if (pba->N_ncdm>0)
     class_read_int("l_max_ncdm",ppr->l_max_ncdm);
   class_read_int("l_max_g_ten",ppr->l_max_g_ten);
@@ -2892,6 +2941,10 @@ int input_default_params(
   pba->ncdm_psd_parameters = NULL;
   pba->ncdm_psd_files = NULL;
 
+  /* TK added */
+  pba->w_gdm = 0.;
+  pba->Omega0_gdm = 0.;
+
   pba->Omega0_scf = 0.; /* Scalar field defaults */
   pba->attractor_ic_scf = _TRUE_;
   pba->scf_parameters = NULL;
@@ -2904,7 +2957,8 @@ int input_default_params(
   pba->Omega0_k = 0.;
   pba->K = 0.;
   pba->sgnK = 0;
-  pba->Omega0_lambda = 1.-pba->Omega0_k-pba->Omega0_g-pba->Omega0_ur-pba->Omega0_b-pba->Omega0_cdm-pba->Omega0_ncdm_tot-pba->Omega0_dcdmdr;
+  pba->Omega0_lambda = 1.-pba->Omega0_k-pba->Omega0_g-pba->Omega0_ur-pba->Omega0_b-pba->Omega0_cdm-pba->Omega0_ncdm_tot-pba->Omega0_dcdmdr-pba->Omega0_gdm;;
+  // TK added GDM to above as well. Technically, TK subtracted it.
   pba->Omega0_fld = 0.;
   pba->a_today = 1.;
   pba->w0_fld=-1.;
@@ -3011,6 +3065,10 @@ int input_default_params(
 
   ppt->three_ceff2_ur=1.;
   ppt->three_cvis2_ur=1.;
+
+  // TK added GDM parameters to perturbation structure because that's how it's coded now.
+  pba->ceff2_gdm = 0.;
+  pba->cvis2_gdm = 0.;
 
   ppt->z_max_pk=0.;
 
@@ -3272,6 +3330,8 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->l_max_pol_g=10;
   ppr->l_max_dr=17;
   ppr->l_max_ur=17;
+  // TK added GDM l_max here. Should it be 17? Do we need it?
+  ppr->l_max_gdm=17;
   ppr->l_max_ncdm=17;
   ppr->l_max_g_ten=5;
   ppr->l_max_pol_g_ten=5;
