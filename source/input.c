@@ -1016,8 +1016,24 @@ int input_read_parameters(
              "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field, so you have to specify both Omega_lambda and Omega_fld in the .ini file");
 
   if (pba->Omega0_fld != 0.) {
-    class_read_double("w0_fld",pba->w0_fld);
-    class_read_double("wa_fld",pba->wa_fld);
+    class_call(parser_read_string(pfc,"w_fld_parametrization",&string1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+
+    if (flag1 == _TRUE_) {
+
+      if ((strstr(string1,"pheno_axion") != NULL)) {
+        pba->w_fld_parametrization = pheno_axion;
+      }
+      class_read_double("a_c",pba->a_c);
+    }
+    else{
+      pba->w_fld_parametrization = CPL;
+      class_read_double("w0_fld",pba->w0_fld);
+      class_read_double("wa_fld",pba->wa_fld);
+    }
+
+
     class_read_double("cs2_fld",pba->cs2_fld);
 
     class_call(parser_read_string(pfc,
@@ -2910,6 +2926,8 @@ int input_default_params(
   pba->w0_fld=-1.;
   pba->wa_fld=0.;
   pba->cs2_fld=1.;
+  pba->w_fld_parametrization = CPL;
+  pba->a_c = 1e-3;
   pba->use_ppf = _TRUE_;
   pba->c_gamma_over_c_fld = 0.4;
 
