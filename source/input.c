@@ -721,6 +721,8 @@ int input_read_parameters(
 
     if (flag1 == _TRUE_) {
       pba->Omega0_ur = param1*7./8.*pow(4./11.,4./3.)*pba->Omega0_g;
+      printf("pba->Omega0_ur %e\n", pba->Omega0_ur);
+
     }
     if (flag2 == _TRUE_) {
       pba->Omega0_ur = param2;
@@ -792,10 +794,17 @@ int input_read_parameters(
     class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
                errmsg,
                "In input file, you can only enter one of Omega_gdm or omega_gdm, choose one");
-    if (flag1 == _TRUE_)
-      pba->Omega0_gdm = param1;
-    if (flag2 == _TRUE_)
-      pba->Omega0_gdm = param2/pba->h/pba->h;
+    if (pba->w_gdm > 0.33 && pba->w_gdm < 0.34){
+      if(flag1 == _TRUE_) pba->Omega0_gdm = param1*7./8.*pow(4./11.,4./3.)*pba->Omega0_g;
+      else if(flag2 == _TRUE_) pba->Omega0_gdm = param2*7./8.*pow(4./11.,4./3.)*pba->Omega0_g;
+      printf("pba->Omega0_gdm %e\n", pba->Omega0_gdm);
+    }
+    else {
+      if ( flag1 == _TRUE_)
+        pba->Omega0_gdm = param1;
+      if (flag2 == _TRUE_)
+        pba->Omega0_gdm = param2/pba->h/pba->h;
+    }
 
     Omega_tot += pba->Omega0_gdm;
 
@@ -3351,7 +3360,7 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->radiation_streaming_trigger_tau_over_tau_k = 45.;
   ppr->radiation_streaming_trigger_tau_c_over_tau = 5.;
 
-  ppr->ur_fluid_approximation = ufa_CLASS;
+  ppr->ur_fluid_approximation = ufa_none;
   ppr->ur_fluid_trigger_tau_over_tau_k = 30.;
 
   ppr->ncdm_fluid_approximation = ncdmfa_CLASS;

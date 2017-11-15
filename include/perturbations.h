@@ -422,8 +422,8 @@ struct perturb_vector
   int index_pt_theta_gdm; /**< gdm velocity */
   int index_pt_shear_gdm; /**< shear of gdm */
   // TK removed this
-  // int index_pt_l3_gdm;    /**< l=3 of gdm */
-  // int l_max_gdm;          /**< max momentum in Boltzmann hierarchy (at least 3) */
+  int index_pt_l3_gdm;    /**< l=3 of gdm */
+  int l_max_gdm;          /**< max momentum in Boltzmann hierarchy (at least 3) */
 
   int index_pt_delta_dcdm; /**< dcdm density */
   int index_pt_theta_dcdm; /**< dcdm velocity */

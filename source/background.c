@@ -315,15 +315,12 @@ int background_functions(
     pvecback[pba->index_bg_rho_gdm] = pba->Omega0_gdm * pow(pba->H0,2) / pow(a_rel, 3*(1 + pba->w_gdm) );
     rho_tot += pvecback[pba->index_bg_rho_gdm];
     p_tot += (pba->w_gdm) * pvecback[pba->index_bg_rho_gdm];
-    // rho_m += pvecback[pba->index_bg_rho_gdm];
-    // rho_r += pvecback[pba->index_bg_rho_ur];
-
-
+    if (pba->w_gdm > 0.33 && pba->w_gdm < 0.34)rho_r += pvecback[pba->index_bg_rho_gdm];
+    else rho_m += pvecback[pba->index_bg_rho_gdm];
     // TK , VP : the following was only to try to debug GDM. It simply copies CDM
     // pvecback[pba->index_bg_rho_gdm] = pba->Omega0_cdm * pow(pba->H0,2) / pow(a_rel, 3 );
     // rho_tot += pvecback[pba->index_bg_rho_cdm];
     // rho_m += pvecback[pba->index_bg_rho_cdm];
-
 
   }
   /* dcdm */
@@ -432,6 +429,7 @@ int background_functions(
     rho_tot += pvecback[pba->index_bg_rho_ur];
     p_tot += (1./3.) * pvecback[pba->index_bg_rho_ur];
     rho_r += pvecback[pba->index_bg_rho_ur];
+
   }
 
   /** - compute expansion rate H from Friedmann equation: this is the
@@ -843,7 +841,7 @@ int background_indices(
 
   /* TK added this to initialise index for rho_gdm */
   /* - index for rho_gdm */
-  class_define_index(pba->index_bg_rho_gdm,pba->has_gdm,index_bg,1);
+  class_define_index(pba->index_bg_rho_gdm,_TRUE_,index_bg,1);
 
 
   /* - indices for ncdm. We only define the indices for ncdm1
@@ -1903,8 +1901,8 @@ int background_initial_conditions(
 
   // TK added GDM here
   // Not sure if GDM should be added here
-  // if (pba->has_gdm == _TRUE_)
-  //   Omega_rad += pba->Omega0_gdm;
+  if (pba->has_gdm == _TRUE_ && (pba->w_gdm > 0.33 && pba->w_gdm < 0.34))
+    Omega_rad += pba->Omega0_gdm;
 
   rho_rad = Omega_rad*pow(pba->H0,2)/pow(a/pba->a_today,4);
   if (pba->has_ncdm == _TRUE_){
@@ -2056,6 +2054,7 @@ int background_output_titles(struct background * pba,
   class_store_columntitle(titles,"(.)rho_g",_TRUE_);
   class_store_columntitle(titles,"(.)rho_b",_TRUE_);
   class_store_columntitle(titles,"(.)rho_cdm",pba->has_cdm);
+  class_store_columntitle(titles,"(.)rho_gdm",pba->has_gdm);
   if (pba->has_ncdm == _TRUE_){
     for (n=0; n<pba->N_ncdm; n++){
       sprintf(tmp,"(.)rho_ncdm[%d]",n);
@@ -2220,8 +2219,8 @@ int background_derivs(
 
   // TK added GDM here
   // Not sure about this one
-  if (pba->has_gdm)
-    rho_M += pvecback[pba->index_bg_rho_gdm];
+  // if (pba->has_gdm && pba->w_gdm != 1./3)
+  //   rho_M += pvecback[pba->index_bg_rho_gdm];
 
 
   dy[pba->index_bi_D] = y[pba->index_bi_D_prime];
