@@ -1080,14 +1080,39 @@ int input_read_parameters(
 
       if ((strstr(string1,"pheno_axion") != NULL)) {
         pba->w_fld_parametrization = pheno_axion;
+        class_read_double("a_c",pba->a_c);
       }
-      class_read_double("a_c",pba->a_c);
+      else{
+        pba->w_fld_parametrization = CPL;
+      }
     }
-    else{
-      pba->w_fld_parametrization = CPL;
+    if(pba->w_fld_parametrization == CPL){
       class_read_double("w0_fld",pba->w0_fld);
       class_read_double("wa_fld",pba->wa_fld);
     }
+
+    class_call(parser_read_string(pfc,
+                                  "fld_has_perturbations",
+                                  &(string1),
+                                  &(flag1),
+                                  errmsg),
+               errmsg,
+               errmsg);
+
+    if (flag1 == _TRUE_) {
+      if ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)) {
+        pba->fld_has_perturbations = _TRUE_;
+      }
+      else {
+        if ((strstr(string1,"n") != NULL) || (strstr(string1,"N") != NULL)) {
+          pba->fld_has_perturbations = _FALSE_;
+        }
+        else {
+          class_stop(errmsg,"incomprehensible input '%s' for the field 'fld_has_perturbations'",string1);
+        }
+      }
+    }
+
 
 
     class_read_double("cs2_fld",pba->cs2_fld);
@@ -2993,6 +3018,7 @@ int input_default_params(
   pba->a_c = 1e-3;
   pba->use_ppf = _TRUE_;
   pba->c_gamma_over_c_fld = 0.4;
+  pba->fld_has_perturbations = _TRUE_;
 
   pba->shooting_failed = _FALSE_;
 
