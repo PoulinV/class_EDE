@@ -2231,8 +2231,8 @@ int background_derivs(
 
   // TK added GDM here
   // Not sure about this one
-  // if (pba->has_gdm && pba->w_gdm != 1./3)
-  //   rho_M += pvecback[pba->index_bg_rho_gdm];
+  if (pba->has_gdm && pba->w_gdm < 0.33)
+    rho_M += pvecback[pba->index_bg_rho_gdm];
 
 
   dy[pba->index_bi_D] = y[pba->index_bi_D_prime];

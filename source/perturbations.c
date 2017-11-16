@@ -4190,7 +4190,7 @@ int perturb_initial_conditions(struct precision * ppr,
     Adding GDM to rho_m unlike ur species */
     if (pba->has_gdm == _TRUE_) {
       if(pba->w_gdm == 0)rho_m += ppw->pvecback[pba->index_bg_rho_gdm];
-      if(pba->w_gdm > 0.33){
+      else if(pba->w_gdm > 0.33){
         rho_r += ppw->pvecback[pba->index_bg_rho_gdm];
         rho_nu += ppw->pvecback[pba->index_bg_rho_gdm];
 
@@ -4362,29 +4362,25 @@ int perturb_initial_conditions(struct precision * ppr,
             if (pba->has_gdm == _TRUE_) {
               // - ktau_two/3. * (1.-om*tau/5.)
               //   * ppr->curvature_ini * s2_squared;
-              delta_gdm = ppw->pv->y[ppw->pv->index_pt_delta_g];
-              // delta_gdm = ppw->pv->y[ppw->pv->index_pt_delta_g]*(-3.)*( -1./4. + ( 3.*ppt->ceff2_gdm - 5.*pba->w_gdm )/8. );
-              // delta_gdm = 3./4.*ppw->pv->y[ppw->pv->index_pt_delta_g];
-              // printf("delta_gdm = %e\n", delta_gdm);
+              // delta_gdm = ppw->pv->y[ppw->pv->index_pt_delta_g]; //exact w=1/3 equation
+              // delta_gdm = 3./4.*ppw->pv->y[ppw->pv->index_pt_delta_g]; //exact w=0 equation
+              delta_gdm = ppw->pv->y[ppw->pv->index_pt_delta_g]*(-3.)*( -1./4. + ( 3.*ppt->ceff2_gdm - 5.*pba->w_gdm )/8. );
 
-              // TK changed the original initial delta_gdm that included curvature terms based on photon density to be much simpler:
-              // delta_gdm = ktau_two* (1.-om*tau/5.)
-              //   * ppr->curvature_ini * s2_squared*( -1./4. + ( 3.*ppt->ceff2_gdm - 5.*pba->w_gdm )/8. );
-              // printf("delta_gdm = %e\n", delta_gdm);
-              /* density of gdm based on photon density like other species above */
 
-              theta_gdm = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared;
-              // theta_gdm = - k*ktau_three*( 1./16.*ppt->ceff2_gdm + 2.*ppt->cvis2_gdm/3./(4.*fracnu+15.) );
-              // theta_gdm = 0.;
+
+              // theta_gdm = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*
+              //   (8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared; //exact w=1/3 equation
+              // theta_gdm = 0.; //exact w=1/3 equation in the synchronous gauge
+              theta_gdm = - k*ktau_three*( 1./16.*ppt->ceff2_gdm + 2.*ppt->cvis2_gdm/3./(4.*fracnu+15.) ); //needs to be generalized to incorporate non-flat universe correction
               /* velocity of gdm. No curvature, s2_sq or 'omega' dependence is assumed here */
 
               // if (theta_gdm != 0.0) {
               //   printf("theta_gdm set in initial conditions = %e\n", theta_gdm);
               // }
 
-              shear_gdm = ktau_two/(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini;
-              // shear_gdm = ktau_two/(45.+12.*fracnu) * 8.*ppt->cvis2_gdm;
-              // shear_gdm = 0.;
+              // shear_gdm = ktau_two/(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini; //exact w=1/3 equation
+              // shear_gdm = 0.; //exact w=0 equation
+              shear_gdm = ktau_two/(45.+12.*fracnu) * 8.*ppt->cvis2_gdm; //needs to be generalized to incorporate non-flat universe correction
 
               // if (shear_gdm != 0.0) {
               //   printf("shear_gdm set in initial conditions = %e\n", shear_gdm);
@@ -4394,7 +4390,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
               l3_gdm = ktau_three*2./7./(12.*fracnu+45.)* ppr->curvature_ini;
               // TK: Not sure what l=3 should be for gdm.
-              // l3_gdm = 0.;
+              // l3_gdm = 0.; //exact w=0 equation
 
 
               ppw->pv->y[ppw->pv->index_pt_delta_gdm] = delta_gdm;
@@ -7688,7 +7684,7 @@ int perturb_derivs(double tau,
 
 
       // }
-      // else{
+      // else{ //exact w=1/3 equations, kept for comparaison
       //   /** - -----> ur density */
       //   dy[pv->index_pt_delta_gdm] =
       //     // standard term
@@ -7708,12 +7704,7 @@ int perturb_derivs(double tau,
 
         // printf("d/dt of theta_gdm = %e\n", dy[pv->index_pt_theta_gdm]);
 
-        /** - -----> exact gdm shear */
-        // dy[pv->index_pt_shear_gdm] =
-        //   0.5*(
-        //    // standard term
-        //    8./15.*ppt->cvis2_gdm*(y[pv->index_pt_theta_gdm]+metric_shear)-3./5.*k*s_l[3]/s_l[2]*y[pv->index_pt_shear_gdm+1]);
-        //    // TK : utterly unsure about this shear eq. Just following ur species exactly for now.
+
 
         /** - -----> TK : Or following ur species code for fluid approximations "a la Hu"
           Assume shear sigma = 2/3 w/(1+w) pi_g where pi_g = anisotropic stress amplitude
@@ -7721,29 +7712,29 @@ int perturb_derivs(double tau,
           Eq. (12) in Hu the becomes:
           sigma^dot + 3 a^dot / a sigma = 2/3 (theta + metric_shear)
           */
-        // Vivian : for the moment, only working in the w=1/3 limit
-        dy[pv->index_pt_shear_gdm] =
-        0.5*(8./15.*(y[pv->index_pt_theta_gdm]+metric_shear)-3./5.*k*s_l[3]/s_l[2]*y[pv->index_pt_shear_gdm+1]
-           // non-standard term, non-zero if cvis2_ur not 1/3
-           -(1.-3*ppt->cvis2_gdm)*(8./15.*(y[pv->index_pt_theta_gdm]+metric_shear)));
+        // exact w=1/3 limit
+        if(pba->w_gdm >= 0.33){
+          dy[pv->index_pt_shear_gdm] =
+          0.5*(8./15.*(y[pv->index_pt_theta_gdm]+metric_shear)-3./5.*k*s_l[3]/s_l[2]*y[pv->index_pt_shear_gdm+1]
+             // non-standard term, non-zero if cvis2_ur not 1/3
+             -(1.-3*ppt->cvis2_gdm)*(8./15.*(y[pv->index_pt_theta_gdm]+metric_shear)));
+        }
+        else{ //Hu equation for the ''standard'' GDM. Next: generalise above equation to avoid cutting the hierarchy.
+          dy[pv->index_pt_shear_gdm] =
+                -3.*a_prime_over_a*y[pv->index_pt_shear_gdm]
+                +(8.*ppt->cvis2_gdm /3. /(1+pba->w_gdm))*(y[pv->index_pt_theta_gdm]+metric_shear);
+        }
 
-
-        //       -3.*a_prime_over_a*y[pv->index_pt_shear_gdm]
-        //       +(8.*ppt->cvis2_gdm /3. /(1+pba->w_gdm))*(y[pv->index_pt_theta_gdm]+metric_shear);
         //
         // // if (dy[pv->index_pt_shear_gdm] != 0.0)
         // // {
         // //   printf("d/dt of shear_gdm = %e %e\n", dy[pv->index_pt_shear_gdm],y[pv->index_pt_shear_gdm]);
         // // }
-        // /** - -----> exact ur shear */
-        // dy[pv->index_pt_shear_ur] =
-        //   0.5*(
-               // standard term
 
 
 
-        // TK removed the following
-        // /** - -----> exact ur l=3 */
+
+        // /** - -----> exact ur l=3, currently only used if w_gdm = 1./3 */
         l = 3;
         dy[pv->index_pt_l3_gdm] = k/(2.*l+1.)*
           (l*2.*s_l[l]*s_l[2]*y[pv->index_pt_shear_gdm]-(l+1.)*s_l[l+1]*y[pv->index_pt_l3_gdm+1]);
