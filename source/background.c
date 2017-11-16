@@ -487,32 +487,44 @@ int background_w_fld(
                      double * dw_over_da_fld,
                      double * integral_fld) {
 
-  /** - first, define the function w(a) */
-  *w_fld = pba->w0_fld + pba->wa_fld * (1. - a / pba->a_today);
 
-  /** - then, give the corresponding analytic derivative dw/da (used
-        by perturbation equations; we could compute it numerically,
-        but with a loss of precision; as long as there is a simple
-        analytic expression of the derivative of the previous
-        function, let's use it! */
-  *dw_over_da_fld = - pba->wa_fld / pba->a_today;
+  if(pba->w_fld_parametrization == CPL){
+    /** - first, define the function w(a) */
+    *w_fld = pba->w0_fld + pba->wa_fld * (1. - a / pba->a_today);
 
-  /** - finally, give the analytic solution of the following integral:
-        \f$ \int_{a}^{a0} da 3(1+w_{fld})/a \f$. This is used in only
-        one place, in the initial conditions for the background, and
-        with a=a_ini. If your w(a) does not lead to a simple analytic
-        solution of this integral, no worry: instead of writing
-        something here, the best would then be to leave it equal to
-        zero, and then in background_initial_conditions() you should
-        implement a numerical calculation of this integral only for
-        a=a_ini, using for instance Romberg integration. It should be
-        fast, simple, and accurate enough. */
-  *integral_fld = 3.*((1.+pba->w0_fld+pba->wa_fld)*log(pba->a_today/a) + pba->wa_fld*(a/pba->a_today-1.));
+    /** - then, give the corresponding analytic derivative dw/da (used
+          by perturbation equations; we could compute it numerically,
+          but with a loss of precision; as long as there is a simple
+          analytic expression of the derivative of the previous
+          function, let's use it! */
+    *dw_over_da_fld = - pba->wa_fld / pba->a_today;
 
-  /** note: of course you can generalise these formulas to anything,
-      defining new parameters pba->w..._fld. Just remember that so
-      far, HyRec explicitely assumes that w(a)= w0 + wa (1-a/a0); but
-      Recfast does not assume anything */
+    /** - finally, give the analytic solution of the following integral:
+          \f$ \int_{a}^{a0} da 3(1+w_{fld})/a \f$. This is used in only
+          one place, in the initial conditions for the background, and
+          with a=a_ini. If your w(a) does not lead to a simple analytic
+          solution of this integral, no worry: instead of writing
+          something here, the best would then be to leave it equal to
+          zero, and then in background_initial_conditions() you should
+          implement a numerical calculation of this integral only for
+          a=a_ini, using for instance Romberg integration. It should be
+          fast, simple, and accurate enough. */
+    *integral_fld = 3.*((1.+pba->w0_fld+pba->wa_fld)*log(pba->a_today/a) + pba->wa_fld*(a/pba->a_today-1.));
+
+    /** note: of course you can generalise these formulas to anything,
+        defining new parameters pba->w..._fld. Just remember that so
+        far, HyRec explicitely assumes that w(a)= w0 + wa (1-a/a0); but
+        Recfast does not assume anything */
+  }
+  else if(pba->w_fld_parametrization == pheno_axion){
+    *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
+    *dw_over_da_fld = 12*pow(a/ pba->a_today,5)*pow(pba->a_c/ pba->a_today,6)/pow((pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6)),2);
+    *integral_fld = log((pow(pba->a_today,6)+pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6)+pow(pba->a_c/ pba->a_today,6)));
+
+    // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
+  }
+
+
 
   return _SUCCESS_;
 }

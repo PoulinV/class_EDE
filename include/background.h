@@ -11,7 +11,7 @@
 #include "parser.h"
 
 enum spatial_curvature {flat,open,closed};
-
+enum w_fld_parametrization {CPL,pheno_axion};
 /**
  * All background parameters and evolution that other modules need to know.
  *
@@ -306,6 +306,15 @@ struct background
   int * q_size_ncdm;    /**< Size of the q_ncdm arrays */
   double * factor_ncdm; /**< List of normalization factors for calculating energy density etc.*/
 
+  //@}
+
+  /**
+   *@name - some flags needed for calling background functions
+   */
+
+  //@{
+  enum w_fld_parametrization w_fld_parametrization;
+  double a_c;
   //@}
 
   /**

@@ -181,7 +181,9 @@ int perturb_init(
                 ppt->error_message,
                 "your ncdm_fluid_approximation is set to %d, out of range defined in perturbations.h",ppr->ncdm_fluid_approximation);
   }
-
+  // if(pba->has_fld == _TRUE_ && pba->w_fld_parametrization == pheno_axion){
+  //   pba->has_fld = _FALSE_;
+  // }
   if (pba->has_fld == _TRUE_) {
 
     /* check values of w_fld at initial time and today */
