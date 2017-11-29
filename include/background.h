@@ -11,7 +11,7 @@
 #include "parser.h"
 
 enum spatial_curvature {flat,open,closed};
-enum w_fld_parametrization {CPL,pheno_axion};
+enum w_fld_parametrization {CPL,pheno_axion,w_free_function};
 /**
  * All background parameters and evolution that other modules need to know.
  *
@@ -94,6 +94,20 @@ struct background
   //double scf_A; /**< \f$ \alpha \f$ : Albrecht-Skordis offset */
 
   double Omega0_k; /**< \f$ \Omega_{0_k} \f$: curvature contribution */
+
+
+  /** modification by VP to add an arbitrary species whose energy density is specified by the user at several knot */
+  double rho_w_free_function;
+  double * w_free_function_at_knot;
+  double * w_free_function_value_at_knot;
+  double * w_free_function_dd_at_knot;
+  short w_free_function_table_is_log;
+  double w_free_function_logz_interpolation_above_z;
+  short w_free_function_interpolation_is_linear;
+  // double * w_free_function_dd_density_at_knot;
+  double * w_free_function_redshift_at_knot;
+  int w_free_function_number_of_knots;
+  int w_free_function_number_of_columns;
 
   int N_ncdm;                            /**< Number of distinguishable ncdm species */
   double * M_ncdm;                       /**< vector of masses of non-cold relic:
@@ -191,6 +205,9 @@ struct background
   int index_bg_pseudo_p_ncdm1;/**< another statistical momentum useful in ncdma approximation */
 
   int index_bg_Omega_r;       /**< relativistic density fraction (\f$ \Omega_{\gamma} + \Omega_{\nu r} \f$) */
+  /** modification by VP to add an arbitrary species whose energy density is specified by the user at several knot */
+  int index_bg_rho_w_free_function;
+  int index_bg_p_w_free_function;
 
   /* end of vector in normal format, now quantities in long format */
 
@@ -286,6 +303,7 @@ struct background
   short has_fld;       /**< presence of fluid with constant w and cs2? */
   short has_ur;        /**< presence of ultra-relativistic neutrinos/relics? */
   short has_curvature; /**< presence of global spatial curvature? */
+  short has_w_free_function; /**< presence of an arbitrary species with user specified density at some knots? */
 
   //@}
 
@@ -529,7 +547,29 @@ extern "C" {
                double phi,
                double phi_prime
                );
-
+ int interpolate_w_free_function_at_a(
+                          struct background * pba,
+                          double a,
+                          double *w_fld,
+                          double *dw_fld
+                        );
+ int w_free_function_init( struct background *pba
+                        );
+ int simpson_integrate_w_free_function(struct background * pba,
+                                         double /*lower limit*/ a,
+                                         double /*upper limit*/ b,
+                                         size_t max_steps,
+                                         // double /*desired accuracy*/ acc,
+                                         double *intw_fld);
+ int romberg_integrate_w_free_function(struct background * pba,
+                                         double /*lower limit*/ a,
+                                         double /*upper limit*/ b,
+                                         size_t max_steps,
+                                         double /*desired accuracy*/ acc,
+                                         double *intw_fld,
+                                         int is_log);
+ double integrand_fld_free_function(struct background * pba,
+                                    double a);
 #ifdef __cplusplus
 }
 #endif

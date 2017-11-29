@@ -418,7 +418,7 @@ int background_functions(
     // Obsolete: at the beginning, we had here the analytic integral solution corresponding to the case w=w0+w1(1-a/a0):
     // pvecback[pba->index_bg_rho_fld] = pba->Omega0_fld * pow(pba->H0,2) / pow(a_rel,3.*(1.+pba->w0_fld+pba->wa_fld)) * exp(3.*pba->wa_fld*(a_rel-1.));
     // But now everthing is integrated numerically for a given w_fld(a) defined in the function background_w_fld.
-
+    // printf("rho tot %e rho fld %e \n",rho_tot,pvecback[pba->index_bg_rho_fld]);
     rho_tot += pvecback[pba->index_bg_rho_fld];
     p_tot += w_fld * pvecback[pba->index_bg_rho_fld];
   }
@@ -487,7 +487,8 @@ int background_w_fld(
                      double * dw_over_da_fld,
                      double * integral_fld) {
 
-
+ double  a_rel = a/ pba->a_today;
+ double w,dw,intw;
   if(pba->w_fld_parametrization == CPL){
     /** - first, define the function w(a) */
     *w_fld = pba->w0_fld + pba->wa_fld * (1. - a / pba->a_today);
@@ -510,7 +511,7 @@ int background_w_fld(
           a=a_ini, using for instance Romberg integration. It should be
           fast, simple, and accurate enough. */
     *integral_fld = 3.*((1.+pba->w0_fld+pba->wa_fld)*log(pba->a_today/a) + pba->wa_fld*(a/pba->a_today-1.));
-
+    // printf("*integral_fld  %e w0_fld %e \n",*integral_fld,pba->w0_fld);
     /** note: of course you can generalise these formulas to anything,
         defining new parameters pba->w..._fld. Just remember that so
         far, HyRec explicitely assumes that w(a)= w0 + wa (1-a/a0); but
@@ -523,11 +524,239 @@ int background_w_fld(
 
     // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
   }
-
+  else if(pba->w_fld_parametrization == w_free_function){
+    interpolate_w_free_function_at_a(pba,a_rel,&w,&dw);
+    *w_fld = w;
+    *dw_over_da_fld = dw;
+    *integral_fld=0; //will be computed later in background_init once and for all;
+  }
+  // printf("a_rel %e %e %e %e\n",a_rel,*w_fld,*dw_over_da_fld,*integral_fld);
 
 
   return _SUCCESS_;
 }
+
+
+
+int w_free_function_init( struct background *pba
+                         ) {
+     /** - --> second derivative with respect to tau of rho_w_free_function (in view of spline interpolation) */
+     class_call(array_spline_table_line_to_line(pba->w_free_function_redshift_at_knot,
+                                                pba->w_free_function_number_of_knots,
+                                                pba->w_free_function_at_knot,
+                                                pba->w_free_function_number_of_columns,
+                                                0,
+                                                2,
+                                                _SPLINE_NATURAL_,
+                                                pba->error_message),
+                pba->error_message,
+                pba->error_message);
+     /** - --> first derivative with respect to tau of rho_w_free_function (using spline interpolation) */
+     class_call(array_derive_spline_table_line_to_line(pba->w_free_function_redshift_at_knot,
+                                                       pba->w_free_function_number_of_knots,
+                                                       pba->w_free_function_at_knot,
+                                                       pba->w_free_function_number_of_columns,
+                                                       0,
+                                                       2,
+                                                       1,
+                                                       pba->error_message),
+                pba->error_message,
+                pba->error_message);
+
+      /** - --> third derivative with respect to tau of rho_w_free_function (in view of spline interpolation) */
+      class_call(array_spline_table_line_to_line(pba->w_free_function_redshift_at_knot,
+                                                 pba->w_free_function_number_of_knots,
+                                                 pba->w_free_function_at_knot,
+                                                 pba->w_free_function_number_of_columns,
+                                                 1,
+                                                 3,
+                                                 _SPLINE_NATURAL_,
+                                                 pba->error_message),
+                 pba->error_message,
+                 pba->error_message);
+
+      /** - --> if necessary, fill a table of secondary derivative in view of spline interpolation */
+      if(pba->w_free_function_interpolation_is_linear == _FALSE_){
+        class_call(array_spline_table_lines(pba->w_free_function_redshift_at_knot,
+                                            pba->w_free_function_number_of_knots,
+                                            pba->w_free_function_at_knot,
+                                           pba->w_free_function_number_of_columns,
+                                           pba->w_free_function_dd_at_knot,
+                                           _SPLINE_EST_DERIV_,
+                                           pba->error_message),
+                    pba->error_message,
+                    pba->error_message);
+      }
+
+        // for(int i=0;i<pba->w_free_function_number_of_knots*pba->w_free_function_number_of_columns;i++){
+        //   printf("pba->w_free_function_at_knot %e\n",pba->w_free_function_at_knot[i]);
+        // }
+     return _SUCCESS_;
+}
+double integrand_fld_free_function(struct background * pba,
+                                   double a){
+
+ double tmp_w,tmp_dw,tmp_intw; //temporary storing quantities
+ interpolate_w_free_function_at_a(pba,a,&tmp_w,&tmp_dw);
+ // printf("tmp_w %e\n",tmp_w );
+ return 3*(1+tmp_w); //we integrate in loga;
+ // return 3*(1+tmp_w);
+}
+int simpson_integrate_w_free_function(struct background * pba,
+                                         double /*lower limit*/ a,
+                                         double /*upper limit*/ b,
+                                         size_t max_steps,
+                                         // double /*desired accuracy*/ acc,
+                                         double *intw_fld){
+   double h = (b-a)/6, s;
+   int i=1;
+   s = (integrand_fld_free_function(pba,pow(10,a))+integrand_fld_free_function(pba,pow(10,b)));
+   while(i<max_steps){
+     s += 4 * integrand_fld_free_function(pba,pow(10,(a + i * h)));
+     i+=2;
+   }
+   i=2;
+   while(i<max_steps-1){
+     s += 2 * integrand_fld_free_function(pba,pow(10,(a + i * h)));
+     i+=2;
+   }
+
+   *intw_fld = s*h/3;
+   return _SUCCESS_;
+}
+int romberg_integrate_w_free_function(struct background * pba,
+                                         double /*lower limit*/ a,
+                                         double /*upper limit*/ b,
+                                         size_t max_steps,
+                                         double /*desired accuracy*/ acc,
+                                         double *intw_fld,
+                                         int is_log){
+   double R1[max_steps], R2[max_steps]; //buffers
+   double *Rp = &R1[0], *Rc = &R2[0]; //Rp is previous row, Rc is current row
+   double h = (b-a); //step size
+   double x,xa=a,xb=b;
+   if(is_log == _TRUE_){
+     xa=pow(10,xa);
+     xb=pow(10,xb);
+   }
+   Rp[0] = (integrand_fld_free_function(pba,xa)+integrand_fld_free_function(pba,xb))*h*.5; //first trapezoidal step
+   // dump_row(0, Rp);
+
+   for(size_t i = 1; i < max_steps; ++i){
+      h /= 2.;
+      double c = 0;
+      size_t ep = 1 << (i-1); //2^(n-1)
+      for(size_t j = 1; j <= ep; ++j){
+         x = a+(2*j-1)*h;
+         // printf("is_log %d x %e\n", is_log, x);
+         if(is_log == _TRUE_){
+           x=pow(10,x);
+           // printf(" x %e j %d ep %d n", x,j,ep);
+         }
+         if(is_log == _TRUE_)c += integrand_fld_free_function(pba,x);
+         else c += integrand_fld_free_function(pba,x)/x;
+         // printf("c %e x %e j %d ep %d \n", c, x,j,ep);
+      }
+      Rc[0] = h*c + .5*Rp[0]; //R(i,0)
+
+      for(size_t j = 1; j <= i; ++j){
+         double n_k = pow(4, j);
+         Rc[j] = (n_k*Rc[j-1] - Rp[j-1])/(n_k-1); //compute R(i,j)
+      }
+
+      //Dump ith column of R, R[i,i] is the best estimate so far
+      // dump_row(i, Rc);
+
+      if(i > 1 && fabs(Rp[i-1]-Rc[i]) < acc){
+         *intw_fld = Rc[i-1];
+         return _SUCCESS_;
+      }
+
+      //swap Rn and Rc as we only need the last row
+      double *rt = Rp;
+      Rp = Rc;
+      Rc = rt;
+   }
+   // printf("Rp[max_steps-1] %e\n",Rp[max_steps-1]);
+   *intw_fld = Rp[max_steps-1]; //return our best guess
+
+   return _SUCCESS_;
+}
+
+int interpolate_w_free_function_at_a(
+                          struct background * pba,
+                          double a,
+                          double *w_fld,
+                          double *dw_fld
+                          ) {
+
+  int last_index;
+  double z;
+  double epsilon = 1e-14;
+  if (a!=0.) z = pba->a_today/a-1.;
+  else z = pba->a_today/(epsilon)-1.;
+  double result[pba->w_free_function_number_of_columns];
+  int i,n;
+
+  if(z > pba->w_free_function_logz_interpolation_above_z && pba->w_free_function_table_is_log == _FALSE_ && pba->w_free_function_redshift_at_knot[pba->w_free_function_number_of_knots-1]>20){
+      for(i = 0 ; i < pba->w_free_function_number_of_knots ; i++){
+        pba->w_free_function_redshift_at_knot[i] = log10(pba->w_free_function_redshift_at_knot[i]);
+      }
+      // printf("a %e z %e pba->w_free_function_redshift_at_knot[pba->w_free_function_number_of_knots-1] %e %d \n", a,z,pba->w_free_function_redshift_at_knot[pba->w_free_function_number_of_knots-1],pba->w_free_function_table_is_log);
+      pba->w_free_function_table_is_log = _TRUE_;
+    }
+
+  else if(z<=pba->w_free_function_logz_interpolation_above_z && pba->w_free_function_table_is_log == _TRUE_ && pba->w_free_function_redshift_at_knot[pba->w_free_function_number_of_knots-1]  < 20){
+    for(i = 0 ; i < pba->w_free_function_number_of_knots ; i++){
+      pba->w_free_function_redshift_at_knot[i] = pow(10,pba->w_free_function_redshift_at_knot[i]);
+    }
+    // printf("a %e  z %e pba->w_free_function_redshift_at_knot[pba->w_free_function_number_of_knots-1] %e %d \n", a,z,pba->w_free_function_redshift_at_knot[pba->w_free_function_number_of_knots-1],pba->w_free_function_table_is_log);
+    pba->w_free_function_table_is_log = _FALSE_;
+  }
+
+  if(z > pba->w_free_function_logz_interpolation_above_z && pba->w_free_function_table_is_log == _TRUE_){
+    z=log10(z);
+  }
+
+
+
+   if(pba->w_free_function_interpolation_is_linear == _TRUE_){
+     class_call(array_interpolate_linear(pba->w_free_function_redshift_at_knot,
+                                      pba->w_free_function_number_of_knots,
+                                      pba->w_free_function_at_knot,
+                                      pba->w_free_function_number_of_columns,
+                                      z,
+                                      &last_index,
+                                      result,
+                                      pba->w_free_function_number_of_columns,
+                                      pba->error_message),
+             pba->error_message,
+             pba->error_message);
+    }
+    else{
+      class_call(array_interpolate_spline(pba->w_free_function_redshift_at_knot,
+                                          pba->w_free_function_number_of_knots,
+                                          pba->w_free_function_at_knot,
+                                          pba->w_free_function_dd_at_knot,
+                                          pba->w_free_function_number_of_columns,
+                                          z,
+                                          &last_index,
+                                          result,
+                                          pba->w_free_function_number_of_columns,
+                                          pba->error_message),
+                 pba->error_message,
+                 pba->error_message);
+    }
+
+
+  *w_fld = result[0];
+  *dw_fld = result[1];
+  // *intw_fld = 0;
+  // printf("a %e z %e w_fld %e dw_fld %e ddwfld %e  dddwfld %e \n",a,z,*w_fld,*dw_fld,result[2],result[3]);
+  return _SUCCESS_;
+}
+
+
 
 /**
  * Initialize the background structure, and in particular the
@@ -646,8 +875,10 @@ int background_init(
 
   /* fluid equation of state */
   if (pba->has_fld == _TRUE_) {
-
-    class_call(background_w_fld(pba,0.,&w_fld,&dw_over_da,&integral_fld), pba->error_message, pba->error_message);
+    if(pba->w_fld_parametrization == w_free_function){
+      w_free_function_init(pba);
+    }
+    class_call(background_w_fld(pba,0,&w_fld,&dw_over_da,&integral_fld), pba->error_message, pba->error_message);
 
     class_test(w_fld >= 1./3.,
                pba->error_message,
@@ -704,7 +935,12 @@ int background_free(
   free(pba->d2tau_dz2_table);
   free(pba->background_table);
   free(pba->d2background_dtau2_table);
-
+  // if(pba->w_fld_parametrization == w_free_function){
+  //   free(pba->w_free_function_at_knot);
+  //   free(pba->w_free_function_value_at_knot);
+  //   free(pba->w_free_function_redshift_at_knot);
+  //   if(pba->w_free_function_interpolation_is_linear == _FALSE_)free(pba->w_free_function_dd_at_knot);
+  // }
   err = background_free_input(pba);
 
   return err;
@@ -760,6 +996,7 @@ int background_free_input(
     if (pba->scf_parameters != NULL)
       free(pba->scf_parameters);
   }
+
   return _SUCCESS_;
 }
 
@@ -797,8 +1034,9 @@ int background_indices(
   pba->has_ur = _FALSE_;
   pba->has_curvature = _FALSE_;
 
-  if (pba->Omega0_cdm != 0.)
+  if (pba->Omega0_cdm != 0.){
     pba->has_cdm = _TRUE_;
+  }
 
   /* TK added GDM here */
   if (pba->Omega0_gdm != 0.)
@@ -819,14 +1057,16 @@ int background_indices(
   if (pba->Omega0_lambda != 0.)
     pba->has_lambda = _TRUE_;
 
-  if (pba->Omega0_fld != 0.)
+  if (pba->Omega0_fld != 0.){
     pba->has_fld = _TRUE_;
+  }
 
   if (pba->Omega0_ur != 0.)
     pba->has_ur = _TRUE_;
 
   if (pba->sgnK != 0)
     pba->has_curvature = _TRUE_;
+
 
   /** - initialize all indices */
 
@@ -1862,7 +2102,7 @@ int background_initial_conditions(
 
   /** - fix initial value of \f$ a \f$ */
   a = ppr->a_ini_over_a_today_default * pba->a_today;
-
+  // printf("a %e \n",a);
   /**  If we have ncdm species, perhaps we need to start earlier
       than the standard value for the species to be relativistic.
       This could happen for some WDM models.
@@ -1949,7 +2189,6 @@ int background_initial_conditions(
   }
 
   if (pba->has_fld == _TRUE_){
-
     /* rho_fld today */
     rho_fld_today = pba->Omega0_fld * pow(pba->H0,2);
 
@@ -1961,7 +2200,18 @@ int background_initial_conditions(
     numerically the simple 1d integral [int_{a_ini}^{a_0} 3
     [(1+w_fld)/a] da] (e.g. with the Romberg method?) instead of
     calling background_w_fld */
-
+    int is_log = _TRUE_;
+    double tmp_integral = 0;
+    if(pba->w_fld_parametrization == w_free_function) {
+      class_call(romberg_integrate_w_free_function(pba,log10(a),0,30,1e-3,&tmp_integral,is_log),pba->error_message, pba->error_message);
+      // if(pba->w_fld_parametrization == w_free_function) class_call(simpson_integrate_w_free_function(pba,-14,-3,1e6,&integral_fld),pba->error_message, pba->error_message);
+      integral_fld=log(10)*tmp_integral; //log10 to log natural conversion
+      // is_log = _FALSE_;
+      // class_call(romberg_integrate_w_free_function(pba,1e-3,pba->a_today,30,1e-3,&tmp_integral,is_log),pba->error_message, pba->error_message);
+      // integral_fld+=tmp_integral;
+    }
+    // printf("a ini %e a today %e integral_fld  %e\n", a,pba->a_today, integral_fld);
+    // integral_fld = 1; // currently assume the fluid to be negligeable at early time.
     /* rho_fld at initial time */
     pvecback_integration[pba->index_bi_rho_fld] = rho_fld_today * exp(integral_fld);
 
@@ -2054,7 +2304,7 @@ int background_output_titles(struct background * pba,
       to be indented correctly, but it can be as long as . */
   int n;
   char tmp[20];
-
+  // printf("has_fld  %d %d \n", pba->has_fld,pba->has_cdm);
   class_store_columntitle(titles,"z",_TRUE_);
   class_store_columntitle(titles,"proper time [Gyr]",_TRUE_);
   class_store_columntitle(titles,"conf. time [Mpc]",_TRUE_);

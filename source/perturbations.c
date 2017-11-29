@@ -181,19 +181,20 @@ int perturb_init(
                 ppt->error_message,
                 "your ncdm_fluid_approximation is set to %d, out of range defined in perturbations.h",ppr->ncdm_fluid_approximation);
   }
-  if(pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _FALSE_){
-    pba->has_fld = _FALSE_;
-  }
+  // if(pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _FALSE_){
+  //   pba->has_fld = _FALSE_;
+  //   printf("here bug  \n");
+  // }
   if (pba->has_fld == _TRUE_) {
-
     /* check values of w_fld at initial time and today */
-    class_call(background_w_fld(pba,     0.,   &w_fld_ini,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
-    class_call(background_w_fld(pba,pba->a_today,&w_fld_0,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
 
+    class_call(background_w_fld(pba, 0, &w_fld_ini,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
+    class_call(background_w_fld(pba,pba->a_today,&w_fld_0,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
     class_test(w_fld_ini >= 0.,
                ppt->error_message,
                "The fluid is meant to be negligible at early time, and unimportant for defining the initial conditions of other species. You are using parameters for which this assumption may break down, since at early times you have w_fld(a--->0) = %e >= 0",w_fld_ini);
-
+    // printf("%e %e %e\n", &w_fld_ini,&dw_over_da_fld,&integral_fld);
+    // printf("%e %e %e\n", &w_fld_0,&dw_over_da_fld,&integral_fld);
     if (pba->use_ppf == _FALSE_) {
 
       class_test((w_fld_ini +1.0)*(w_fld_0+1.0) <= 0.0,
@@ -4310,9 +4311,11 @@ int perturb_initial_conditions(struct precision * ppr,
       /* fluid (assumes wa=0, if this is not the case the
          fluid will catch anyway the attractor solution) */
       if (pba->has_fld == _TRUE_) {
-
+        // if(pba->w_free_function_table_is_log == _FALSE_ && 1./a -1 > pba->w_free_function_logz_interpolation_above_z)pba->w_free_function_table_is_log = _TRUE_;
+        // printf("1./a -1  %e pba->w_free_function_logz_interpolation_above_z %e\n", 1./a -1 ,pba->w_free_function_logz_interpolation_above_z);
+        // printf("in perturb initial conditions scalars %d\n", pba->w_free_function_table_is_log);
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
-
+        // printf("1./a -1  %e w_fld %e\n", 1./a -1 ,w_fld);
         if (pba->use_ppf == _FALSE_) {
           ppw->pv->y[ppw->pv->index_pt_delta_fld] = - ktau_two/4.*(1.+w_fld)*(4.-3.*pba->cs2_fld)/(4.-6.*w_fld+3.*pba->cs2_fld) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC: curvature
 
@@ -4598,7 +4601,8 @@ int perturb_initial_conditions(struct precision * ppr,
 
       /* fluid */
       if ((pba->has_fld == _TRUE_) && (pba->use_ppf == _FALSE_)) {
-
+        // if(1./a -1 > pba->w_free_function_logz_interpolation_above_z)pba->w_free_function_table_is_log = _TRUE_;
+        // printf("in perturb initial conditions newt%d\n", pba->w_free_function_table_is_log);
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
 
         ppw->pv->y[ppw->pv->index_pt_delta_fld] += 3*(1.+w_fld)*a_prime_over_a*alpha;
@@ -5733,7 +5737,11 @@ int perturb_total_stress_energy(
 
     /* fluid contribution */
     if (pba->has_fld == _TRUE_) {
+      // if(pba->w_free_function_table_is_log == _FALSE_ && 1./a -1 > pba->w_free_function_logz_interpolation_above_z)pba->w_free_function_table_is_log = _TRUE_;
+      // else if(pba->w_free_function_table_is_log == _TRUE_ && 1./a -1 < pba->w_free_function_logz_interpolation_above_z)pba->w_free_function_table_is_log = _FALSE_;
+      // printf("in perturb sources %d\n", pba->w_free_function_table_is_log);
 
+      // printf("pba->w_free_function_table_is_log %d\n", pba->w_free_function_table_is_log);
       class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
 
       if (pba->use_ppf == _FALSE_) {
@@ -6373,6 +6381,7 @@ int perturb_sources(
 
     /* theta_fld */
     if (ppt->has_source_theta_fld == _TRUE_) {
+      // printf("in perturb initial conditions %d %e\n", pba->w_free_function_table_is_log,a_rel*pba->a_today);
 
       class_call(background_w_fld(pba,a_rel*pba->a_today,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
 
@@ -7531,6 +7540,7 @@ int perturb_derivs(double tau,
 
         /** - ----> factors w, w_prime, adiabatic sound speed ca2 (all three background-related),
             plus actual sound speed in the fluid rest frame cs2 */
+          // printf("in perturb derivs %d\n", pba->w_free_function_table_is_log);
 
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
         w_prime_fld = dw_over_da_fld * a_prime_over_a * a;

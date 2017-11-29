@@ -992,6 +992,48 @@ int input_read_parameters(
   }
   Omega_tot += pba->Omega0_ncdm_tot;
 
+  class_read_double("w_free_function_number_of_knots",pba->w_free_function_number_of_knots);
+  double *tmp_w_free_function;
+  if(pba->w_free_function_number_of_knots > 0){
+
+
+        class_call(parser_read_string(pfc,
+                                      "w_free_function_interpolation_is_linear",
+                                      &(string1),
+                                      &(flag1),
+                                      errmsg),
+                   errmsg,
+                   errmsg);
+
+        if (flag1 == _TRUE_) {
+          if ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)) {
+            pba->w_free_function_interpolation_is_linear = _TRUE_;
+          }
+          else {
+            if ((strstr(string1,"n") != NULL) || (strstr(string1,"N") != NULL)) {
+              pba->w_free_function_interpolation_is_linear = _FALSE_;
+            }
+            else {
+              class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_interpolation_is_linear'",string1);
+            }
+          }
+        }
+
+        class_read_double("w_free_function_logz_interpolation_above_z",pba->w_free_function_logz_interpolation_above_z);
+        pba->w_free_function_table_is_log = _FALSE_;
+        class_read_list_of_doubles_or_default("w_free_function_redshift_at_knot",pba->w_free_function_redshift_at_knot,0.0,pba->w_free_function_number_of_knots);
+        class_read_list_of_doubles_or_default("w_free_function_value_at_knot",pba->w_free_function_value_at_knot,0.0,pba->w_free_function_number_of_knots);
+        pba->w_free_function_number_of_columns = 4;//[0,1,2,3]=[1,dw,ddw,dddw];
+        class_alloc(pba->w_free_function_at_knot,sizeof(double)*pba->w_free_function_number_of_columns*pba->w_free_function_number_of_knots,pba->error_message);
+        for(i=0;i<pba->w_free_function_number_of_knots;i++){
+          pba->w_free_function_at_knot[i*pba->w_free_function_number_of_columns]=pba->w_free_function_value_at_knot[i];
+          for(n = 1; n < pba->w_free_function_number_of_columns ; n++)pba->w_free_function_at_knot[i*pba->w_free_function_number_of_columns+n]=0.;
+          // printf("%e %e %d\n", pba->w_free_function_at_knot[i*pba->w_free_function_number_of_columns],pba->w_free_function_redshift_at_knot[i],pba->w_free_function_number_of_knots);
+        }
+        // class_read_list_of_doubles_or_default_fill_column("w_free_function_density_at_knot",pba->w_free_function_at_knot,tmp_w_free_function,0,0.0,pba->w_free_function_number_of_knots,4); //the factor 4 stands for rho,drho,ddrho,dddrho
+        if(pba->w_free_function_interpolation_is_linear == _FALSE_)class_alloc(pba->w_free_function_dd_at_knot,sizeof(double)*pba->w_free_function_number_of_columns*pba->w_free_function_number_of_knots,pba->error_message);
+
+  }
   /** - Omega_0_k (effective fractional density of curvature) */
   class_read_double("Omega_k",pba->Omega0_k);
   /** - Set curvature parameter K */
@@ -1071,25 +1113,31 @@ int input_read_parameters(
              errmsg,
              "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field, so you have to specify both Omega_lambda and Omega_fld in the .ini file");
 
+
+   class_call(parser_read_string(pfc,"w_fld_parametrization",&string1,&flag1,errmsg),
+              errmsg,
+              errmsg);
+
+   if (flag1 == _TRUE_) {
+
+     if ((strstr(string1,"pheno_axion") != NULL)) {
+       pba->w_fld_parametrization = pheno_axion;
+       class_read_double("a_c",pba->a_c);
+     }
+     else if((strstr(string1,"w_free_function") != NULL)) {
+       pba->w_fld_parametrization = w_free_function;
+     }
+     else{
+       pba->w_fld_parametrization = CPL;
+     }
+   }
+   if(pba->w_fld_parametrization == CPL){
+     class_read_double("w0_fld",pba->w0_fld);
+     class_read_double("wa_fld",pba->wa_fld);
+   }
+
   if (pba->Omega0_fld != 0.) {
-    class_call(parser_read_string(pfc,"w_fld_parametrization",&string1,&flag1,errmsg),
-               errmsg,
-               errmsg);
 
-    if (flag1 == _TRUE_) {
-
-      if ((strstr(string1,"pheno_axion") != NULL)) {
-        pba->w_fld_parametrization = pheno_axion;
-        class_read_double("a_c",pba->a_c);
-      }
-      else{
-        pba->w_fld_parametrization = CPL;
-      }
-    }
-    if(pba->w_fld_parametrization == CPL){
-      class_read_double("w0_fld",pba->w0_fld);
-      class_read_double("wa_fld",pba->wa_fld);
-    }
 
     class_call(parser_read_string(pfc,
                                   "fld_has_perturbations",
@@ -3009,6 +3057,11 @@ int input_default_params(
   pba->sgnK = 0;
   pba->Omega0_lambda = 1.-pba->Omega0_k-pba->Omega0_g-pba->Omega0_ur-pba->Omega0_b-pba->Omega0_cdm-pba->Omega0_ncdm_tot-pba->Omega0_dcdmdr-pba->Omega0_gdm;;
   // TK added GDM to above as well. Technically, TK subtracted it.
+  pba->w_free_function_number_of_knots = 0;
+  pba->w_free_function_logz_interpolation_above_z = 1e30; //arbitrarily large number, no log interpolation in the default case.
+  pba->w_free_function_table_is_log = _FALSE_;
+  pba->w_free_function_interpolation_is_linear = _TRUE_; //default: we linearly interpolate rho and rho'. Found to be better to avoid weird behavior at low-z.
+
   pba->Omega0_fld = 0.;
   pba->a_today = 1.;
   pba->w0_fld=-1.;
