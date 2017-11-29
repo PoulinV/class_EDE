@@ -991,6 +991,28 @@ int input_read_parameters(
     }
   }
   Omega_tot += pba->Omega0_ncdm_tot;
+  class_call(parser_read_string(pfc,
+                                "w_free_function_from_file",
+                                &(string1),
+                                &(flag1),
+                                errmsg),
+             errmsg,
+             errmsg);
+
+  if (flag1 == _TRUE_) {
+    if ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)) {
+      pba->w_free_function_from_file = _TRUE_;
+    }
+    else {
+      if ((strstr(string1,"n") != NULL) || (strstr(string1,"N") != NULL)) {
+        pba->w_free_function_from_file = _FALSE_;
+      }
+      else {
+        class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_from_file'",string1);
+      }
+    }
+  }
+  class_read_string("w_free_function_file",ppr->w_free_function_file);
 
   class_read_double("w_free_function_number_of_knots",pba->w_free_function_number_of_knots);
   double *tmp_w_free_function;
@@ -3354,6 +3376,9 @@ int input_default_precision ( struct precision * ppr ) {
   /* for bbn */
   sprintf(ppr->sBBN_file,__CLASSDIR__);
   strcat(ppr->sBBN_file,"/bbn/sBBN_2017.dat");
+  // /* for w_eff */
+  // sprintf(ppr->w_free_function_file,__CLASSDIR__);
+  // strcat(ppr->w_free_function_file,"");
 
   /* for recombination */
 

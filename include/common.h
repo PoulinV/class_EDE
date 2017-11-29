@@ -421,6 +421,7 @@ struct precision
   /** @name - parameters related to the thermodynamics */
 
   //@{
+  FileName w_free_function_file;
 
   /* - for bbn */
 /* @cond INCLUDE_WITH_DOXYGEN */

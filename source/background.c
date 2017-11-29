@@ -414,7 +414,7 @@ int background_functions(
     /* get w_fld from dedicated function */
     class_call(background_w_fld(pba,a,&w_fld,&dw_over_da,&integral_fld), pba->error_message, pba->error_message);
     pvecback[pba->index_bg_w_fld] = w_fld;
-
+    // printf("a %e w_fld %e \n",a,w_fld);
     // Obsolete: at the beginning, we had here the analytic integral solution corresponding to the case w=w0+w1(1-a/a0):
     // pvecback[pba->index_bg_rho_fld] = pba->Omega0_fld * pow(pba->H0,2) / pow(a_rel,3.*(1.+pba->w0_fld+pba->wa_fld)) * exp(3.*pba->wa_fld*(a_rel-1.));
     // But now everthing is integrated numerically for a given w_fld(a) defined in the function background_w_fld.
@@ -524,8 +524,18 @@ int background_w_fld(
 
     // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
   }
+  // else if(pba->w_fld_parametrization == cos_axion){
+  //   *w_fld = cos(pba->mu_axion)+0.5;
+  //   *dw_over_da_fld = -sin();
+  //   *integral_fld = log((pow(pba->a_today,6)+pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6)+pow(pba->a_c/ pba->a_today,6)));
+  //
+  //   // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
+  // }
   else if(pba->w_fld_parametrization == w_free_function){
-    interpolate_w_free_function_at_a(pba,a_rel,&w,&dw);
+    // if(pba->w_free_function_from_file == _TRUE_)
+    // printf("pba->w_free_function_number_of_knots %d\n", pba->w_free_function_number_of_knots);
+    interpolate_w_free_function_from_file_at_a(pba,a_rel,&w,&dw);
+    // else interpolate_w_free_function_at_a(pba,a_rel,&w,&dw);
     *w_fld = w;
     *dw_over_da_fld = dw;
     *integral_fld=0; //will be computed later in background_init once and for all;
@@ -538,92 +548,187 @@ int background_w_fld(
 
 
 
-int w_free_function_init( struct background *pba
+int w_free_function_init( struct precision *ppr,
+                          struct background *pba
                          ) {
-     /** - --> second derivative with respect to tau of rho_w_free_function (in view of spline interpolation) */
-     class_call(array_spline_table_line_to_line(pba->w_free_function_redshift_at_knot,
-                                                pba->w_free_function_number_of_knots,
-                                                pba->w_free_function_at_knot,
-                                                pba->w_free_function_number_of_columns,
-                                                0,
-                                                2,
-                                                _SPLINE_NATURAL_,
-                                                pba->error_message),
-                pba->error_message,
-                pba->error_message);
-     /** - --> first derivative with respect to tau of rho_w_free_function (using spline interpolation) */
-     class_call(array_derive_spline_table_line_to_line(pba->w_free_function_redshift_at_knot,
-                                                       pba->w_free_function_number_of_knots,
-                                                       pba->w_free_function_at_knot,
-                                                       pba->w_free_function_number_of_columns,
-                                                       0,
-                                                       2,
-                                                       1,
-                                                       pba->error_message),
-                pba->error_message,
-                pba->error_message);
+     FILE * fA = NULL;
+     char line[_LINE_LENGTH_MAX_];
+     char * left;
 
-      /** - --> third derivative with respect to tau of rho_w_free_function (in view of spline interpolation) */
-      class_call(array_spline_table_line_to_line(pba->w_free_function_redshift_at_knot,
-                                                 pba->w_free_function_number_of_knots,
-                                                 pba->w_free_function_at_knot,
-                                                 pba->w_free_function_number_of_columns,
-                                                 1,
-                                                 3,
-                                                 _SPLINE_NATURAL_,
-                                                 pba->error_message),
-                 pba->error_message,
-                 pba->error_message);
+     /* BEGIN: New variables related to the use of an external code to calculate the annihilation coefficients */
+     char arguments[_ARGUMENT_LENGTH_MAX_];
+     char command_with_arguments[2*_ARGUMENT_LENGTH_MAX_];
+     int status;
+     /* END */
 
-      /** - --> if necessary, fill a table of secondary derivative in view of spline interpolation */
-      if(pba->w_free_function_interpolation_is_linear == _FALSE_){
-        class_call(array_spline_table_lines(pba->w_free_function_redshift_at_knot,
-                                            pba->w_free_function_number_of_knots,
-                                            pba->w_free_function_at_knot,
-                                           pba->w_free_function_number_of_columns,
-                                           pba->w_free_function_dd_at_knot,
-                                           _SPLINE_EST_DERIV_,
-                                           pba->error_message),
-                    pba->error_message,
-                    pba->error_message);
-      }
+     int num_lines=0;
+     int array_line=0;
 
+     if(pba->w_free_function_from_file==_TRUE_){
+
+       class_open(fA,ppr->w_free_function_file, "r",pba->error_message);
+
+         /* go through each line */
+         while (fgets(line,_LINE_LENGTH_MAX_-1,fA) != NULL) {
+           /* eliminate blank spaces at beginning of line */
+           left=line;
+           while (left[0]==' ') {
+             left++;
+           }
+
+           /* check that the line is neither blank nor a comment. In
+              ASCII, left[0]>39 means that first non-blank charachter might
+              be the beginning of some data (it is not a newline, a #, a %,
+              etc.) */
+           if (left[0] > 39) {
+
+             /* if the line contains data, we must interprete it. If
+                num_lines == 0 , the current line must contain
+                its value. Otherwise, it must contain (z,w,dw). */
+             if (num_lines == 0) {
+
+               /* read num_lines, infer size of arrays and allocate them */
+               class_test(sscanf(line,"%d",&num_lines) != 1,
+                          pba->error_message,
+                          "could not read value of parameters num_lines in file %s\n",ppr->w_free_function_file);
+               printf("num_lines %d\n", num_lines);
+               class_alloc(pba->w_free_function_redshift_at_knot,num_lines*sizeof(double),pba->error_message);
+               class_alloc(pba->w_free_function_at_knot,num_lines*sizeof(double),pba->error_message);
+               class_alloc(pba->w_free_function_d_at_knot,num_lines*sizeof(double),pba->error_message);
+               class_alloc(pba->w_free_function_dd_at_knot,num_lines*sizeof(double),pba->error_message);
+               class_alloc(pba->w_free_function_ddd_at_knot,num_lines*sizeof(double),pba->error_message);
+               pba->w_free_function_number_of_knots = num_lines;
+
+
+               array_line=0;
+
+             }
+             else {
+
+               /* read coefficients */
+               class_test(sscanf(line,"%lg %lg %lg ",
+                                 &(pba->w_free_function_redshift_at_knot[array_line]),
+                                 &(pba->w_free_function_at_knot[array_line]),
+                                 &(pba->w_free_function_d_at_knot[array_line])) != 3,
+                          pba->error_message,
+                          "could not read value of parameters coefficients in file %s\n",ppr->w_free_function_file);
+               array_line ++;
+             }
+           }
+         }
+         fclose(fA);
+           /* spline in one dimension */
+           class_call(array_spline_table_lines(pba->w_free_function_redshift_at_knot,
+                                               num_lines,
+                                               pba->w_free_function_at_knot,
+                                               1,
+                                               pba->w_free_function_dd_at_knot,
+                                               _SPLINE_NATURAL_,
+                                               pba->error_message),
+                      pba->error_message,
+                      pba->error_message);
+
+           class_call(array_spline_table_lines(pba->w_free_function_redshift_at_knot,
+                                               num_lines,
+                                               pba->w_free_function_d_at_knot,
+                                               1,
+                                               pba->w_free_function_ddd_at_knot,
+                                               _SPLINE_NATURAL_,
+                                               pba->error_message),
+                      pba->error_message,
+                      pba->error_message);
+
+
+     }
+     else{
+       /** - --> second derivative with respect to tau of rho_w_free_function (in view of spline interpolation) */
+       class_call(array_spline_table_line_to_line(pba->w_free_function_redshift_at_knot,
+                                                  pba->w_free_function_number_of_knots,
+                                                  pba->w_free_function_at_knot,
+                                                  pba->w_free_function_number_of_columns,
+                                                  0,
+                                                  2,
+                                                  _SPLINE_NATURAL_,
+                                                  pba->error_message),
+                  pba->error_message,
+                  pba->error_message);
+       /** - --> first derivative with respect to tau of rho_w_free_function (using spline interpolation) */
+       class_call(array_derive_spline_table_line_to_line(pba->w_free_function_redshift_at_knot,
+                                                         pba->w_free_function_number_of_knots,
+                                                         pba->w_free_function_at_knot,
+                                                         pba->w_free_function_number_of_columns,
+                                                         0,
+                                                         2,
+                                                         1,
+                                                         pba->error_message),
+                  pba->error_message,
+                  pba->error_message);
+
+        /** - --> third derivative with respect to tau of rho_w_free_function (in view of spline interpolation) */
+        class_call(array_spline_table_line_to_line(pba->w_free_function_redshift_at_knot,
+                                                   pba->w_free_function_number_of_knots,
+                                                   pba->w_free_function_at_knot,
+                                                   pba->w_free_function_number_of_columns,
+                                                   1,
+                                                   3,
+                                                   _SPLINE_NATURAL_,
+                                                   pba->error_message),
+                   pba->error_message,
+                   pba->error_message);
+
+        /** - --> if necessary, fill a table of secondary derivative in view of spline interpolation */
+        if(pba->w_free_function_interpolation_is_linear == _FALSE_){
+          class_call(array_spline_table_lines(pba->w_free_function_redshift_at_knot,
+                                              pba->w_free_function_number_of_knots,
+                                              pba->w_free_function_at_knot,
+                                             pba->w_free_function_number_of_columns,
+                                             pba->w_free_function_dd_at_knot,
+                                             _SPLINE_EST_DERIV_,
+                                             pba->error_message),
+                      pba->error_message,
+                      pba->error_message);
+        }
+
+     }
         // for(int i=0;i<pba->w_free_function_number_of_knots*pba->w_free_function_number_of_columns;i++){
         //   printf("pba->w_free_function_at_knot %e\n",pba->w_free_function_at_knot[i]);
         // }
      return _SUCCESS_;
 }
+
 double integrand_fld_free_function(struct background * pba,
-                                   double a){
+                                   double a,
+                                   int is_log){
 
- double tmp_w,tmp_dw,tmp_intw; //temporary storing quantities
- interpolate_w_free_function_at_a(pba,a,&tmp_w,&tmp_dw);
- // printf("tmp_w %e\n",tmp_w );
- return 3*(1+tmp_w); //we integrate in loga;
- // return 3*(1+tmp_w);
-}
-int simpson_integrate_w_free_function(struct background * pba,
-                                         double /*lower limit*/ a,
-                                         double /*upper limit*/ b,
-                                         size_t max_steps,
-                                         // double /*desired accuracy*/ acc,
-                                         double *intw_fld){
-   double h = (b-a)/6, s;
-   int i=1;
-   s = (integrand_fld_free_function(pba,pow(10,a))+integrand_fld_free_function(pba,pow(10,b)));
-   while(i<max_steps){
-     s += 4 * integrand_fld_free_function(pba,pow(10,(a + i * h)));
-     i+=2;
-   }
-   i=2;
-   while(i<max_steps-1){
-     s += 2 * integrand_fld_free_function(pba,pow(10,(a + i * h)));
-     i+=2;
-   }
+ double tmp_w,tmp_dw; //temporary storing quantities
+ if(pba->w_free_function_from_file == _TRUE_)interpolate_w_free_function_from_file_at_a(pba,a,&tmp_w,&tmp_dw);
+ else interpolate_w_free_function_at_a(pba,a,&tmp_w,&tmp_dw);
 
-   *intw_fld = s*h/3;
-   return _SUCCESS_;
+ if(is_log==_TRUE_)return 3*(1+tmp_w); //we integrate in loga;
+ else return 3*(1+tmp_w);
 }
+// int simpson_integrate_w_free_function(struct background * pba,
+//                                          double /*lower limit*/ a,
+//                                          double /*upper limit*/ b,
+//                                          size_t max_steps,
+//                                          // double /*desired accuracy*/ acc,
+//                                          double *intw_fld){
+//    double h = (b-a)/6, s;
+//    int i=1;
+//    s = (integrand_fld_free_function(pba,pow(10,a),is_)+integrand_fld_free_function(pba,pow(10,b)));
+//    while(i<max_steps){
+//      s += 4 * integrand_fld_free_function(pba,pow(10,(a + i * h)));
+//      i+=2;
+//    }
+//    i=2;
+//    while(i<max_steps-1){
+//      s += 2 * integrand_fld_free_function(pba,pow(10,(a + i * h)));
+//      i+=2;
+//    }
+//
+//    *intw_fld = s*h/3;
+//    return _SUCCESS_;
+// }
 int romberg_integrate_w_free_function(struct background * pba,
                                          double /*lower limit*/ a,
                                          double /*upper limit*/ b,
@@ -639,7 +744,7 @@ int romberg_integrate_w_free_function(struct background * pba,
      xa=pow(10,xa);
      xb=pow(10,xb);
    }
-   Rp[0] = (integrand_fld_free_function(pba,xa)+integrand_fld_free_function(pba,xb))*h*.5; //first trapezoidal step
+   Rp[0] = (integrand_fld_free_function(pba,xa,is_log)+integrand_fld_free_function(pba,xb,is_log))*h*.5; //first trapezoidal step
    // dump_row(0, Rp);
 
    for(size_t i = 1; i < max_steps; ++i){
@@ -653,8 +758,7 @@ int romberg_integrate_w_free_function(struct background * pba,
            x=pow(10,x);
            // printf(" x %e j %d ep %d n", x,j,ep);
          }
-         if(is_log == _TRUE_)c += integrand_fld_free_function(pba,x);
-         else c += integrand_fld_free_function(pba,x)/x;
+         c += integrand_fld_free_function(pba,x,is_log);
          // printf("c %e x %e j %d ep %d \n", c, x,j,ep);
       }
       Rc[0] = h*c + .5*Rp[0]; //R(i,0)
@@ -681,6 +785,81 @@ int romberg_integrate_w_free_function(struct background * pba,
    *intw_fld = Rp[max_steps-1]; //return our best guess
 
    return _SUCCESS_;
+}
+
+int interpolate_w_free_function_from_file_at_a(
+                                               struct background * pba,
+                                               double a,
+                                               double *w_fld,
+                                               double *dw_fld
+                                               ) {
+
+  int last_index,i;
+  double z=1e14;
+  if(a!=0) z=1./a-1;
+  double tmp_w,tmp_dw;
+  // printf("z %e\n",z);
+  // if(z==1e14)for(i = 0;i<pba->w_free_function_number_of_knots;i++){
+  //   printf("%e %e %e\n",pba->w_free_function_redshift_at_knot[i],pba->w_free_function_at_knot[i],pba->w_free_function_d_at_knot[i]);
+  // }
+
+  if(pba->w_free_function_interpolation_is_linear == _TRUE_){
+      class_call(array_interpolate_linear(pba->w_free_function_redshift_at_knot,
+                                       pba->w_free_function_number_of_knots,
+                                       pba->w_free_function_at_knot,
+                                       1,
+                                       z,
+                                       &last_index,
+                                       &tmp_w,
+                                       1,
+                                       pba->error_message),
+              pba->error_message,
+              pba->error_message);
+      class_call(array_interpolate_linear(pba->w_free_function_redshift_at_knot,
+                                       pba->w_free_function_number_of_knots,
+                                       pba->w_free_function_d_at_knot,
+                                       1,
+                                       z,
+                                       &last_index,
+                                       &tmp_dw,
+                                       1,
+                                       pba->error_message),
+              pba->error_message,
+              pba->error_message);
+    }
+    else{
+      class_call(array_interpolate_spline(pba->w_free_function_redshift_at_knot,
+                                          pba->w_free_function_number_of_knots,
+                                          pba->w_free_function_at_knot,
+                                          pba->w_free_function_dd_at_knot,
+                                          1,
+                                          z,
+                                          &last_index,
+                                          w_fld,
+                                          1,
+                                          pba->error_message),
+                 pba->error_message,
+                 pba->error_message);
+
+      class_call(array_interpolate_spline(pba->w_free_function_redshift_at_knot,
+                                          pba->w_free_function_number_of_knots,
+                                          pba->w_free_function_d_at_knot,
+                                          pba->w_free_function_ddd_at_knot,
+                                          1,
+                                          z,
+                                          &last_index,
+                                          dw_fld,
+                                          1,
+                                          pba->error_message),
+                 pba->error_message,
+                 pba->error_message);
+    }
+  *w_fld=tmp_w;
+  *dw_fld=tmp_dw;
+        // printf("pba->w_free_function_number_of_knots %d\n", pba->w_free_function_number_of_knots);
+  // printf("z %e %e %e pba->w_free_function_number_of_knots %d \n",z,*w_fld,*dw_fld,pba->w_free_function_number_of_knots);
+  return _SUCCESS_;
+
 }
 
 int interpolate_w_free_function_at_a(
@@ -876,7 +1055,7 @@ int background_init(
   /* fluid equation of state */
   if (pba->has_fld == _TRUE_) {
     if(pba->w_fld_parametrization == w_free_function){
-      w_free_function_init(pba);
+      w_free_function_init(ppr,pba);
     }
     class_call(background_w_fld(pba,0,&w_fld,&dw_over_da,&integral_fld), pba->error_message, pba->error_message);
 
@@ -2203,14 +2382,22 @@ int background_initial_conditions(
     int is_log = _TRUE_;
     double tmp_integral = 0;
     if(pba->w_fld_parametrization == w_free_function) {
-      class_call(romberg_integrate_w_free_function(pba,log10(a),0,30,1e-3,&tmp_integral,is_log),pba->error_message, pba->error_message);
-      // if(pba->w_fld_parametrization == w_free_function) class_call(simpson_integrate_w_free_function(pba,-14,-3,1e6,&integral_fld),pba->error_message, pba->error_message);
-      integral_fld=log(10)*tmp_integral; //log10 to log natural conversion
+      if(pba->w_free_function_from_file == _TRUE_){
+        is_log = _FALSE_;
+      class_call(romberg_integrate_w_free_function(pba,a,pba->a_today,30,1e-3,&tmp_integral,is_log),pba->error_message, pba->error_message);
+      integral_fld=tmp_integral;
+      // integral_fld = 6.6671e-7;
+      }
+      else{
+        class_call(romberg_integrate_w_free_function(pba,log10(a),0,30,1e-3,&tmp_integral,is_log),pba->error_message, pba->error_message);
+        // if(pba->w_fld_parametrization == w_free_function) class_call(simpson_integrate_w_free_function(pba,-14,-3,1e6,&integral_fld),pba->error_message, pba->error_message);
+        integral_fld=log(10)*tmp_integral; //log10 to log natural conversion
+      }
       // is_log = _FALSE_;
       // class_call(romberg_integrate_w_free_function(pba,1e-3,pba->a_today,30,1e-3,&tmp_integral,is_log),pba->error_message, pba->error_message);
       // integral_fld+=tmp_integral;
     }
-    // printf("a ini %e a today %e integral_fld  %e\n", a,pba->a_today, integral_fld);
+    printf("a ini %e a today %e integral_fld  %e\n", a,pba->a_today, integral_fld);
     // integral_fld = 1; // currently assume the fluid to be negligeable at early time.
     /* rho_fld at initial time */
     pvecback_integration[pba->index_bi_rho_fld] = rho_fld_today * exp(integral_fld);

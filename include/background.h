@@ -100,8 +100,11 @@ struct background
   double rho_w_free_function;
   double * w_free_function_at_knot;
   double * w_free_function_value_at_knot;
+  double * w_free_function_d_at_knot;
   double * w_free_function_dd_at_knot;
+  double * w_free_function_ddd_at_knot;
   short w_free_function_table_is_log;
+  short w_free_function_from_file;
   double w_free_function_logz_interpolation_above_z;
   short w_free_function_interpolation_is_linear;
   // double * w_free_function_dd_density_at_knot;
@@ -553,7 +556,9 @@ extern "C" {
                           double *w_fld,
                           double *dw_fld
                         );
- int w_free_function_init( struct background *pba
+ int w_free_function_init(
+                          struct precision *ppr,
+                          struct background *pba
                         );
  int simpson_integrate_w_free_function(struct background * pba,
                                          double /*lower limit*/ a,
@@ -568,8 +573,15 @@ extern "C" {
                                          double /*desired accuracy*/ acc,
                                          double *intw_fld,
                                          int is_log);
+  int interpolate_w_free_function_from_file_at_a(
+                                                  struct background * pba,
+                                                  double a,
+                                                  double *w_fld,
+                                                  double *dw_fld
+                                                );
  double integrand_fld_free_function(struct background * pba,
-                                    double a);
+                                    double a,
+                                    int is_log);
 #ifdef __cplusplus
 }
 #endif
