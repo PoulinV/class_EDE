@@ -181,11 +181,7 @@ int perturb_init(
                 ppt->error_message,
                 "your ncdm_fluid_approximation is set to %d, out of range defined in perturbations.h",ppr->ncdm_fluid_approximation);
   }
-  // if(pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _FALSE_){
-  //   pba->has_fld = _FALSE_;
-  //   printf("here bug  \n");
-  // }
-  if (pba->has_fld == _TRUE_) {
+  if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_) {
     /* check values of w_fld at initial time and today */
 
     class_call(background_w_fld(pba, 0, &w_fld_ini,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
@@ -679,7 +675,7 @@ int perturb_indices_of_perturbs(
           ppt->has_source_delta_cdm = _TRUE_;
         if (pba->has_dcdm == _TRUE_)
           ppt->has_source_delta_dcdm = _TRUE_;
-        if (pba->has_fld == _TRUE_)
+        if (pba->has_fld == _TRUE_  && pba->fld_has_perturbations == _TRUE_)
           ppt->has_source_delta_fld = _TRUE_;
         if (pba->has_scf == _TRUE_)
           ppt->has_source_delta_scf = _TRUE_;
@@ -710,7 +706,7 @@ int perturb_indices_of_perturbs(
           ppt->has_source_theta_cdm = _TRUE_;
         if (pba->has_dcdm == _TRUE_)
           ppt->has_source_theta_dcdm = _TRUE_;
-        if (pba->has_fld == _TRUE_)
+        if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_)
           ppt->has_source_theta_fld = _TRUE_;
         if (pba->has_scf == _TRUE_)
           ppt->has_source_theta_scf = _TRUE_;
@@ -3138,11 +3134,11 @@ int perturb_vector_init(
 
     /* fluid */
 
-    if (pba->use_ppf == _FALSE_) {
+    if (pba->use_ppf == _FALSE_ && pba->fld_has_perturbations == _TRUE_) {
       class_define_index(ppv->index_pt_delta_fld,pba->has_fld,index_pt,1); /* fluid density */
       class_define_index(ppv->index_pt_theta_fld,pba->has_fld,index_pt,1); /* fluid velocity */
     }
-    else {
+    else if(pba->use_ppf == _TRUE_ && pba->fld_has_perturbations == _TRUE_){
       class_define_index(ppv->index_pt_Gamma_fld,pba->has_fld,index_pt,1); /* Gamma variable of PPF scheme */
     }
 
@@ -3572,7 +3568,7 @@ int perturb_vector_init(
             ppw->pv->y[ppw->pv->index_pt_F0_dr+l];
       }
 
-      if (pba->has_fld == _TRUE_) {
+      if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_) {
 
         if (pba->use_ppf == _FALSE_) {
           ppv->y[ppv->index_pt_delta_fld] =
@@ -4310,7 +4306,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
       /* fluid (assumes wa=0, if this is not the case the
          fluid will catch anyway the attractor solution) */
-      if (pba->has_fld == _TRUE_) {
+      if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_) {
         // if(pba->w_free_function_table_is_log == _FALSE_ && 1./a -1 > pba->w_free_function_logz_interpolation_above_z)pba->w_free_function_table_is_log = _TRUE_;
         // printf("1./a -1  %e pba->w_free_function_logz_interpolation_above_z %e\n", 1./a -1 ,pba->w_free_function_logz_interpolation_above_z);
         // printf("in perturb initial conditions scalars %d\n", pba->w_free_function_table_is_log);
@@ -4600,7 +4596,7 @@ int perturb_initial_conditions(struct precision * ppr,
       }
 
       /* fluid */
-      if ((pba->has_fld == _TRUE_) && (pba->use_ppf == _FALSE_)) {
+      if ((pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_) && (pba->use_ppf == _FALSE_)) {
         // if(1./a -1 > pba->w_free_function_logz_interpolation_above_z)pba->w_free_function_table_is_log = _TRUE_;
         // printf("in perturb initial conditions newt%d\n", pba->w_free_function_table_is_log);
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
@@ -5736,7 +5732,7 @@ int perturb_total_stress_energy(
     /* add your extra species here */
 
     /* fluid contribution */
-    if (pba->has_fld == _TRUE_) {
+    if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_) {
       // if(pba->w_free_function_table_is_log == _FALSE_ && 1./a -1 > pba->w_free_function_logz_interpolation_above_z)pba->w_free_function_table_is_log = _TRUE_;
       // else if(pba->w_free_function_table_is_log == _TRUE_ && 1./a -1 < pba->w_free_function_logz_interpolation_above_z)pba->w_free_function_table_is_log = _FALSE_;
       // printf("in perturb sources %d\n", pba->w_free_function_table_is_log);
@@ -7534,7 +7530,7 @@ int perturb_derivs(double tau,
 
     /** - ---> fluid (fld) */
 
-    if (pba->has_fld == _TRUE_) {
+    if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_) {
 
       if (pba->use_ppf == _FALSE_){
 
