@@ -705,7 +705,7 @@ double integrand_fld_free_function(struct background * pba,
  else interpolate_w_free_function_at_a(pba,a,&tmp_w,&tmp_dw);
 
  if(is_log==_TRUE_)return 3*(1+tmp_w); //we integrate in loga;
- else return 3*(1+tmp_w);
+ else return 3*(1+tmp_w)/a;
 }
 // int simpson_integrate_w_free_function(struct background * pba,
 //                                          double /*lower limit*/ a,
