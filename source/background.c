@@ -521,16 +521,16 @@ int background_w_fld(
     *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
     *dw_over_da_fld = 12*pow(a/ pba->a_today,5)*pow(pba->a_c/ pba->a_today,6)/pow((pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6)),2);
     *integral_fld = log((pow(pba->a_today,6)+pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6)+pow(pba->a_c/ pba->a_today,6)));
-
     // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
+
   }
-  else if(pba->w_fld_parametrization == pheno_axion_generalized){
+  else if(pba->w_fld_parametrization == pheno_generalized){
     w = (pba->n_pheno_axion-1)/(1+pba->n_pheno_axion);
     *w_fld = (1+w)/(1+pow(pba->a_c/a,3*(1+w)))-1;
     // *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
-    *dw_over_da_fld = 3*pow(a/pba->a_today,-1-3*(1+w))*pow(pba->a_c/ pba->a_today,(1+w)*(1+w))/pow((1 + pba->a_c/pba->a_today*pow(a/ pba->a_today,-3*(1+w))),2);
+    *dw_over_da_fld = 3*pow(a/pba->a_today,-1-3*(1+w))*pba->a_c/ pba->a_today*(1+w)*(1+w)/pow((1 + pba->a_c/pba->a_today*pow(a/ pba->a_today,-3*(1+w))),2);
     *integral_fld = log(pow(a/pba->a_today,3*(1+w))+pba->a_c/ pba->a_today);
-
+    *integral_fld = -(3*(1 + w)*(3*w*log(a/pba->a_today) + log(pow(a/pba->a_today,3) + pow(pba->a_c/ pba->a_today,3)*pow(pba->a_c/a,3*w)))/(3 + 3*w));
     // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
   }
   // else if(pba->w_fld_parametrization == cos_axion){

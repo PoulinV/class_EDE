@@ -11,7 +11,7 @@
 #include "parser.h"
 
 enum spatial_curvature {flat,open,closed};
-enum w_fld_parametrization {CPL,pheno_axion,pheno_axion_generalized,w_free_function};
+enum w_fld_parametrization {CPL,pheno_axion,pheno_generalized,w_free_function};
 /**
  * All background parameters and evolution that other modules need to know.
  *

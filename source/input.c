@@ -1141,7 +1141,6 @@ int input_read_parameters(
               errmsg);
 
    if (flag1 == _TRUE_) {
-
      if ((strstr(string1,"pheno_axion") != NULL)) {
        pba->w_fld_parametrization = pheno_axion;
        class_read_double("a_c",pba->a_c);
@@ -1149,8 +1148,8 @@ int input_read_parameters(
      else if((strstr(string1,"w_free_function") != NULL)) {
        pba->w_fld_parametrization = w_free_function;
      }
-     else if((strstr(string1,"pheno_axion_generalized") != NULL)) {
-       pba->w_fld_parametrization = pheno_axion_generalized;
+     else if((strstr(string1,"pheno_generalized") != NULL)) {
+       pba->w_fld_parametrization = pheno_generalized;
        class_read_double("a_c",pba->a_c);
        class_read_double("n_pheno_axion",pba->n_pheno_axion);
      }
