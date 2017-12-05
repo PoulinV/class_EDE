@@ -1149,6 +1149,11 @@ int input_read_parameters(
      else if((strstr(string1,"w_free_function") != NULL)) {
        pba->w_fld_parametrization = w_free_function;
      }
+     else if((strstr(string1,"pheno_axion_generalized") != NULL)) {
+       pba->w_fld_parametrization = pheno_axion_generalized;
+       class_read_double("a_c",pba->a_c);
+       class_read_double("n_pheno_axion",pba->n_pheno_axion);
+     }
      else{
        pba->w_fld_parametrization = CPL;
      }
@@ -3091,6 +3096,7 @@ int input_default_params(
   pba->cs2_fld=1.;
   pba->w_fld_parametrization = CPL;
   pba->a_c = 1e-3;
+  pba->n_pheno_axion = 1e30;// n = Infinity has default value
   pba->use_ppf = _TRUE_;
   pba->c_gamma_over_c_fld = 0.4;
   pba->fld_has_perturbations = _TRUE_;

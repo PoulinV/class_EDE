@@ -524,6 +524,15 @@ int background_w_fld(
 
     // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
   }
+  else if(pba->w_fld_parametrization == pheno_axion_generalized){
+    w = (pba->n_pheno_axion-1)/(1+pba->n_pheno_axion);
+    *w_fld = (1+w)/(1+pow(pba->a_c/a,3*(1+w)))-1;
+    // *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
+    *dw_over_da_fld = 3*pow(a/pba->a_today,-1-3*(1+w))*pow(pba->a_c/ pba->a_today,(1+w)*(1+w))/pow((1 + pba->a_c/pba->a_today*pow(a/ pba->a_today,-3*(1+w))),2);
+    *integral_fld = log(pow(a/pba->a_today,3*(1+w))+pba->a_c/ pba->a_today);
+
+    // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
+  }
   // else if(pba->w_fld_parametrization == cos_axion){
   //   *w_fld = cos(pba->mu_axion)+0.5;
   //   *dw_over_da_fld = -sin();
@@ -2397,7 +2406,7 @@ int background_initial_conditions(
       // class_call(romberg_integrate_w_free_function(pba,1e-3,pba->a_today,30,1e-3,&tmp_integral,is_log),pba->error_message, pba->error_message);
       // integral_fld+=tmp_integral;
     }
-    printf("a ini %e a today %e integral_fld  %e\n", a,pba->a_today, integral_fld);
+    // printf("a ini %e a today %e integral_fld  %e\n", a,pba->a_today, integral_fld);
     // integral_fld = 1; // currently assume the fluid to be negligeable at early time.
     /* rho_fld at initial time */
     pvecback_integration[pba->index_bi_rho_fld] = rho_fld_today * exp(integral_fld);
