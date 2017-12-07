@@ -761,7 +761,7 @@ int romberg_integrate_w_free_function(struct background * pba,
       h /= 2.;
       double c = 0;
       size_t ep = 1 << (i-1); //2^(n-1)
-      for(size_t j = 1; j <= ep; ++j){
+      for(j = 1; j <= ep; ++j){
          x = a+(2*j-1)*h;
          // printf("is_log %d x %e\n", is_log, x);
          if(is_log == _TRUE_){
