@@ -721,7 +721,6 @@ int input_read_parameters(
 
     if (flag1 == _TRUE_) {
       pba->Omega0_ur = param1*7./8.*pow(4./11.,4./3.)*pba->Omega0_g;
-      printf("pba->Omega0_ur %e\n", pba->Omega0_ur);
 
     }
     if (flag2 == _TRUE_) {
@@ -797,7 +796,7 @@ int input_read_parameters(
     if (pba->w_gdm > 0.33 && pba->w_gdm < 0.34){
       if(flag1 == _TRUE_) pba->Omega0_gdm = param1*7./8.*pow(4./11.,4./3.)*pba->Omega0_g;
       else if(flag2 == _TRUE_) pba->Omega0_gdm = param2*7./8.*pow(4./11.,4./3.)*pba->Omega0_g;
-      printf("pba->Omega0_gdm %e\n", pba->Omega0_gdm);
+      // printf("pba->Omega0_gdm %e\n", pba->Omega0_gdm);
     }
     else {
       if ( flag1 == _TRUE_)
@@ -809,7 +808,7 @@ int input_read_parameters(
     Omega_tot += pba->Omega0_gdm;
 
 
-    printf("This is what was read in for GDM parameters \nw_gdm = %f    ceff^2_gdm = %f    cvis^2_gdm = %f   Omega_gdm = %f\n", pba->w_gdm, ppt->ceff2_gdm, ppt->cvis2_gdm, pba->Omega0_gdm);
+    // printf("This is what was read in for GDM parameters \nw_gdm = %f    ceff^2_gdm = %f    cvis^2_gdm = %f   Omega_gdm = %f\n", pba->w_gdm, ppt->ceff2_gdm, ppt->cvis2_gdm, pba->Omega0_gdm);
 
 
 
