@@ -748,6 +748,8 @@ int romberg_integrate_w_free_function(struct background * pba,
    double *Rp = &R1[0], *Rc = &R2[0]; //Rp is previous row, Rc is current row
    double h = (b-a); //step size
    double x,xa=a,xb=b;
+   size_t i;
+   size_t j;
    if(is_log == _TRUE_){
      xa=pow(10,xa);
      xb=pow(10,xb);
@@ -755,7 +757,7 @@ int romberg_integrate_w_free_function(struct background * pba,
    Rp[0] = (integrand_fld_free_function(pba,xa,is_log)+integrand_fld_free_function(pba,xb,is_log))*h*.5; //first trapezoidal step
    // dump_row(0, Rp);
 
-   for(size_t i = 1; i < max_steps; ++i){
+   for( i = 1; i < max_steps; ++i){
       h /= 2.;
       double c = 0;
       size_t ep = 1 << (i-1); //2^(n-1)
@@ -771,7 +773,7 @@ int romberg_integrate_w_free_function(struct background * pba,
       }
       Rc[0] = h*c + .5*Rp[0]; //R(i,0)
 
-      for(size_t j = 1; j <= i; ++j){
+      for(j = 1; j <= i; ++j){
          double n_k = pow(4, j);
          Rc[j] = (n_k*Rc[j-1] - Rp[j-1])/(n_k-1); //compute R(i,j)
       }
