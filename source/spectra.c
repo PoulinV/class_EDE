@@ -2547,7 +2547,8 @@ int spectra_k_and_tau(
   }
 
   /** - allocate and fill table of tau values at which \f$P(k,\tau)\f$ and \f$T_i(k,\tau)\f$ are stored */
-
+  class_test(psp->ln_tau_size < 0,psp->error_message,
+  "this should never happen, a bug must have occured.");
   class_alloc(psp->ln_tau,sizeof(double)*psp->ln_tau_size,psp->error_message);
 
   for (index_tau=0; index_tau<psp->ln_tau_size; index_tau++) {
