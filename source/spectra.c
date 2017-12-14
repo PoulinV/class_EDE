@@ -2581,7 +2581,8 @@ int spectra_k_and_tau(
       index_tau++;
     }
     psp->ln_tau_nl_size=ppt->tau_size-index_tau;
-
+    class_test(psp->ln_tau_nl_size < 0,psp->error_message,
+    "this should never happen, a bug must have occured.");
     class_alloc(psp->ln_tau_nl,sizeof(double)*psp->ln_tau_nl_size,psp->error_message);
 
     for (index_tau=0; index_tau<psp->ln_tau_nl_size; index_tau++) {
