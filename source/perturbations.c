@@ -192,8 +192,8 @@ int perturb_init(
     // printf("%e %e %e\n", &w_fld_ini,&dw_over_da_fld,&integral_fld);
     // printf("%e %e %e\n", &w_fld_0,&dw_over_da_fld,&integral_fld);
     if (pba->use_ppf == _FALSE_) {
-
-      class_test((w_fld_ini +1.0)*(w_fld_0+1.0) <= 0.0,
+      // printf("w_fld_ini %e, w_fld_0 %e (w_fld_ini +1.0)*(w_fld_0+1.0) %e\n",w_fld_ini,w_fld_0,(w_fld_ini +1.0)*(w_fld_0+1.0));
+      class_test((w_fld_ini +1.0)*(w_fld_0+1.0) < 0.0,
                  ppt->error_message,
                  "w crosses -1 between the infinite past and today, and this would lead to divergent perturbation equations for the fluid perturbations. Try to switch to PPF scheme: use_ppf = yes");
 
@@ -2563,6 +2563,13 @@ int perturb_prepare_output(struct background * pba,
       /* Scalar field scf */
       class_store_columntitle(ppt->scalar_titles, "delta_scf", pba->has_scf);
       class_store_columntitle(ppt->scalar_titles, "theta_scf", pba->has_scf);
+      if(pba->fld_has_perturbations == _TRUE_ && pba->use_ppf== _FALSE_){
+        class_store_columntitle(ppt->scalar_titles, "delta_fld", pba->has_fld);
+        class_store_columntitle(ppt->scalar_titles, "theta_fld", pba->has_fld);
+      }
+      else if (pba->fld_has_perturbations == _TRUE_ && pba->use_ppf== _TRUE_){
+        class_store_columntitle(ppt->scalar_titles, "Gamma_fld", pba->has_fld);
+      }
 
       ppt->number_of_scalar_titles =
         get_number_of_titles(ppt->scalar_titles);
@@ -6503,6 +6510,7 @@ int perturb_print_variables(double tau,
   double delta_b,theta_b;
   double delta_cdm=0.,theta_cdm=0.;
   double delta_dcdm=0.,theta_dcdm=0.;
+  double delta_fld=0.,theta_fld=0.;
   double delta_dr=0.,theta_dr=0.,shear_dr=0., f_dr=1.0;
   double delta_ur=0.,theta_ur=0.,shear_ur=0.,l4_ur=0.;
   // TK added GDM here
@@ -6525,11 +6533,11 @@ int perturb_print_variables(double tau,
   /** - ncdm sector ends */
   double phi=0.,psi=0.,alpha=0.;
   double delta_temp=0., delta_chi=0.;
-
+  double w_fld,dw_over_da_fld,integral_fld;
   double a,a2,H;
   int idx,index_q, storeidx;
   double *dataptr;
-
+  double Gamma_fld;
 
   /** - rename structure fields (just to avoid heavy notations) */
 
@@ -6632,6 +6640,16 @@ int perturb_print_variables(double tau,
       theta_gdm = y[ppw->pv->index_pt_theta_gdm];
       shear_gdm = y[ppw->pv->index_pt_shear_gdm];
       }
+    if(pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_){
+      if (pba->has_fld == _TRUE_ && pba->use_ppf == _FALSE_) {
+        delta_fld = y[ppw->pv->index_pt_delta_fld];
+        theta_fld = y[ppw->pv->index_pt_theta_fld];
+        }
+        if (pba->has_fld == _TRUE_ && pba->use_ppf == _TRUE_) {
+          Gamma_fld = y[ppw->pv->index_pt_Gamma_fld];
+          }
+    }
+
     /* gravitational potentials */
     if (ppt->gauge == synchronous) {
 
@@ -6786,6 +6804,12 @@ int perturb_print_variables(double tau,
         theta_scf += k*k*alpha;
       }
 
+      if (pba->has_fld == _TRUE_  && pba->use_ppf == _FALSE_){
+        class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
+        delta_fld += alpha*(-3.0*H*(1.0+w_fld));
+        theta_fld += k*k*alpha;
+      }
+
     }
     // TK commented this out
     // /* converting synchronous variables to newtonian ones */
@@ -6917,6 +6941,14 @@ int perturb_print_variables(double tau,
     /* Scalar field scf*/
     class_store_double(dataptr, delta_scf, pba->has_scf, storeidx);
     class_store_double(dataptr, theta_scf, pba->has_scf, storeidx);
+    /* Fluid*/
+    if(pba->fld_has_perturbations == _TRUE_ && pba->use_ppf == _FALSE_){
+      class_store_double(dataptr, delta_fld, pba->has_fld, storeidx);
+      class_store_double(dataptr, theta_fld, pba->has_fld, storeidx);
+    }
+    else if(pba->fld_has_perturbations == _TRUE_ && pba->use_ppf == _TRUE_){
+      class_store_double(dataptr, Gamma_fld, pba->has_fld, storeidx);
+    }
 
     //fprintf(ppw->perturb_output_file,"\n");
 

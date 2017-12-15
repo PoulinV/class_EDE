@@ -488,6 +488,8 @@ int background_w_fld(
                      double * integral_fld) {
 
  double  a_rel = a/ pba->a_today;
+ double z = 1/a_rel-1;
+ double center, width, wbefore, wafter;
  double w,dw,intw;
   if(pba->w_fld_parametrization == CPL){
     /** - first, define the function w(a) */
@@ -530,6 +532,19 @@ int background_w_fld(
     // *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
     *dw_over_da_fld = 3*pow(a/pba->a_today,-1-3*(1+w))*pba->a_c/ pba->a_today*(1+w)*(1+w)/pow((1 + pba->a_c/pba->a_today*pow(a/ pba->a_today,-3*(1+w))),2);
     *integral_fld = -(3*(1 + w)*(3*w*log(a/pba->a_today) + log(pow(a/pba->a_today,3) + pow(pba->a_c/ pba->a_today,3)*pow(pba->a_c/a,3*w)))/(3 + 3*w));
+    // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
+  }
+  else if(pba->w_fld_parametrization == pheno_alternative){
+    z = 1/a-1;
+    center = 1/pba->a_c-1;
+    width = 2*center/200;//found to work well at capturing the sharp transition
+    wbefore = -1;
+    wafter = (pba->n_pheno_axion-1)/(1+pba->n_pheno_axion);
+    *w_fld = (wbefore - wafter)*(tanh((z - center)/width) + 1)/2 + wafter;
+    // *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
+    *dw_over_da_fld = (wbefore - wafter)* (1-pow(tanh((z - center)/width),2))/(2*width);
+    // printf("dw_over_da_fld %e\n", *dw_over_da_fld);
+    *integral_fld = 0; //to be computed numerically
     // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
   }
   // else if(pba->w_fld_parametrization == cos_axion){
@@ -708,9 +723,15 @@ double integrand_fld_free_function(struct background * pba,
                                    double a,
                                    int is_log){
 
- double tmp_w,tmp_dw; //temporary storing quantities
- if(pba->w_free_function_from_file == _TRUE_)interpolate_w_free_function_from_file_at_a(pba,a,&tmp_w,&tmp_dw);
- else interpolate_w_free_function_at_a(pba,a,&tmp_w,&tmp_dw);
+ double tmp_w,tmp_dw,tmp_integral_fld; //temporary storing quantities
+ if(pba->w_fld_parametrization == w_free_function){
+   if(pba->w_free_function_from_file == _TRUE_)interpolate_w_free_function_from_file_at_a(pba,a,&tmp_w,&tmp_dw);
+   else interpolate_w_free_function_at_a(pba,a,&tmp_w,&tmp_dw);
+ }
+ else if(pba->w_fld_parametrization == pheno_alternative){
+   class_call(background_w_fld(pba,a,&tmp_w,&tmp_dw,&tmp_integral_fld), pba->error_message, pba->error_message);
+ }
+
 
  if(is_log==_TRUE_)return 3*(1+tmp_w); //we integrate in loga;
  else return 3*(1+tmp_w)/a;
@@ -2394,18 +2415,23 @@ int background_initial_conditions(
     if(pba->w_fld_parametrization == w_free_function) {
       if(pba->w_free_function_from_file == _TRUE_){
         is_log = _FALSE_;
-      class_call(romberg_integrate_w_free_function(pba,a,pba->a_today,30,1e-3,&tmp_integral,is_log),pba->error_message, pba->error_message);
+      class_call(romberg_integrate_w_free_function(pba,a,pba->a_today,30,1e-4,&tmp_integral,is_log),pba->error_message, pba->error_message);
       integral_fld=tmp_integral;
       // integral_fld = 6.6671e-7;
       }
       else{
-        class_call(romberg_integrate_w_free_function(pba,log10(a),0,30,1e-3,&tmp_integral,is_log),pba->error_message, pba->error_message);
+        class_call(romberg_integrate_w_free_function(pba,log10(a),0,30,1e-4,&tmp_integral,is_log),pba->error_message, pba->error_message);
         // if(pba->w_fld_parametrization == w_free_function) class_call(simpson_integrate_w_free_function(pba,-14,-3,1e6,&integral_fld),pba->error_message, pba->error_message);
         integral_fld=log(10)*tmp_integral; //log10 to log natural conversion
       }
       // is_log = _FALSE_;
       // class_call(romberg_integrate_w_free_function(pba,1e-3,pba->a_today,30,1e-3,&tmp_integral,is_log),pba->error_message, pba->error_message);
       // integral_fld+=tmp_integral;
+    }
+    else if (pba->w_fld_parametrization == pheno_alternative){
+      is_log = _FALSE_;
+    class_call(romberg_integrate_w_free_function(pba,a,pba->a_today,30,1e-4,&tmp_integral,is_log),pba->error_message, pba->error_message);
+    integral_fld=tmp_integral;
     }
     // printf("a ini %e a today %e integral_fld  %e\n", a,pba->a_today, integral_fld);
     // integral_fld = 1; // currently assume the fluid to be negligeable at early time.

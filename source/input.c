@@ -1152,6 +1152,11 @@ int input_read_parameters(
        class_read_double("a_c",pba->a_c);
        class_read_double("n_pheno_axion",pba->n_pheno_axion);
      }
+     else if((strstr(string1,"pheno_alternative") != NULL)) {
+       pba->w_fld_parametrization = pheno_alternative;
+       class_read_double("a_c",pba->a_c);
+       class_read_double("n_pheno_axion",pba->n_pheno_axion);
+     }
      else{
        pba->w_fld_parametrization = CPL;
      }
