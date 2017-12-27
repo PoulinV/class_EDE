@@ -2948,7 +2948,7 @@ int spectra_matter_transfers(
   double delta_i,theta_i,rho_i;
   double delta_rho_tot,rho_tot;
   double rho_plus_p_theta_tot,rho_plus_p_tot;
-  int n_ncdm;
+  int n_ncdm,n;
   double w_fld,dw_over_da_fld,integral_fld;
 
   /** - check the presence of scalar modes */
@@ -3203,39 +3203,39 @@ int spectra_matter_transfers(
         /* T_fld(k,tau) */
 
         if (pba->has_fld == _TRUE_) {
+          for(n = 0; n<pba->n_fld; n++){
+            rho_i = pvecback_sp_long[pba->index_bg_rho_fld+n];
 
-          rho_i = pvecback_sp_long[pba->index_bg_rho_fld];
+            class_call(background_w_fld(pba,0.,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, psp->error_message);
 
-          class_call(background_w_fld(pba,0.,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, psp->error_message);
+            if (ppt->has_source_delta_fld == _TRUE_) {
 
-          if (ppt->has_source_delta_fld == _TRUE_) {
+              delta_i = ppt->sources[index_md]
+                [index_ic * ppt->tp_size[index_md] + ppt->index_tp_delta_fld + n]
+                [(index_tau-psp->ln_tau_size+ppt->tau_size) * ppt->k_size[index_md] + index_k];
 
-            delta_i = ppt->sources[index_md]
-              [index_ic * ppt->tp_size[index_md] + ppt->index_tp_delta_fld]
-              [(index_tau-psp->ln_tau_size+ppt->tau_size) * ppt->k_size[index_md] + index_k];
+              psp->matter_transfer[((index_tau*psp->ln_k_size + index_k) * psp->ic_size[index_md] + index_ic) * psp->tr_size + psp->index_tr_delta_fld + n] = delta_i;
 
-            psp->matter_transfer[((index_tau*psp->ln_k_size + index_k) * psp->ic_size[index_md] + index_ic) * psp->tr_size + psp->index_tr_delta_fld] = delta_i;
+              delta_rho_tot += rho_i * delta_i;
 
-            delta_rho_tot += rho_i * delta_i;
+            }
 
+            rho_tot += rho_i;
+
+            if (ppt->has_source_theta_fld == _TRUE_) {
+
+              theta_i = ppt->sources[index_md]
+                [index_ic * ppt->tp_size[index_md] + ppt->index_tp_theta_fld + n]
+                [(index_tau-psp->ln_tau_size+ppt->tau_size) * ppt->k_size[index_md] + index_k];
+
+              psp->matter_transfer[((index_tau*psp->ln_k_size + index_k) * psp->ic_size[index_md] + index_ic) * psp->tr_size + psp->index_tr_theta_fld + n] = theta_i;
+
+              rho_plus_p_theta_tot += (1. + w_fld) * rho_i * theta_i;
+
+            }
+
+            rho_plus_p_tot += (1. + w_fld) * rho_i;
           }
-
-          rho_tot += rho_i;
-
-          if (ppt->has_source_theta_fld == _TRUE_) {
-
-            theta_i = ppt->sources[index_md]
-              [index_ic * ppt->tp_size[index_md] + ppt->index_tp_theta_fld]
-              [(index_tau-psp->ln_tau_size+ppt->tau_size) * ppt->k_size[index_md] + index_k];
-
-            psp->matter_transfer[((index_tau*psp->ln_k_size + index_k) * psp->ic_size[index_md] + index_ic) * psp->tr_size + psp->index_tr_theta_fld] = theta_i;
-
-            rho_plus_p_theta_tot += (1. + w_fld) * rho_i * theta_i;
-
-          }
-
-          rho_plus_p_tot += (1. + w_fld) * rho_i;
-
         }
 
         /* T_ur(k,tau) */

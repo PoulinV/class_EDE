@@ -11,7 +11,7 @@
 #include "parser.h"
 
 enum spatial_curvature {flat,open,closed};
-enum w_fld_parametrization {CPL,pheno_axion,pheno_generalized,w_free_function,pheno_alternative};
+enum w_fld_parametrization {CPL,pheno_axion,w_free_function,pheno_alternative};
 /**
  * All background parameters and evolution that other modules need to know.
  *
@@ -50,6 +50,7 @@ struct background
   double Omega0_lambda; /**< \f$ \Omega_{0_\Lambda} \f$: cosmological constant */
 
   double Omega0_fld; /**< \f$ \Omega_{0 de} \f$: fluid */
+  double * Omega_many_fld; /**< \f$ \Omega_{0 de} \f$: if many fluids */
   double w0_fld; /**< \f$ w0_{DE} \f$: current fluid equation of state parameter */
   double wa_fld; /**< \f$ wa_{DE} \f$: fluid equation of state parameter derivative */
   short  fld_has_perturbations;
@@ -336,8 +337,9 @@ struct background
 
   //@{
   enum w_fld_parametrization w_fld_parametrization;
-  double a_c;
-  double n_pheno_axion;
+  int n_fld;
+  double * a_c;
+  double * n_pheno_axion;
   //@}
 
   /**
@@ -443,7 +445,8 @@ extern "C" {
                        double a,
                        double * w_fld,
                        double * dw_over_da_fld,
-                       double * integral_fld);
+                       double * integral_fld,
+                       int n_fld);
 
   int background_init(
 		      struct precision *ppr,
@@ -573,7 +576,8 @@ extern "C" {
                                          size_t max_steps,
                                          double /*desired accuracy*/ acc,
                                          double *intw_fld,
-                                         int is_log);
+                                         int is_log,
+                                         int n_fld);
   int interpolate_w_free_function_from_file_at_a(
                                                   struct background * pba,
                                                   double a,
@@ -582,7 +586,8 @@ extern "C" {
                                                 );
  double integrand_fld_free_function(struct background * pba,
                                     double a,
-                                    int is_log);
+                                    int is_log,
+                                    int n_fld);
 #ifdef __cplusplus
 }
 #endif

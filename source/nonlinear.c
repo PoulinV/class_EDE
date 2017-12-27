@@ -374,7 +374,7 @@ int nonlinear_halofit(
   Omega0_m = (pba->Omega0_cdm + pba->Omega0_b + pba->Omega0_ncdm_tot + pba->Omega0_dcdm);
 
   /* Halofit needs w0 = w_fld today */
-  class_call(background_w_fld(pba,pba->a_today,&w0,&dw_over_da_fld,&integral_fld), pba->error_message, pnl->error_message);
+  class_call(background_w_fld(pba,pba->a_today,&w0,&dw_over_da_fld,&integral_fld,0), pba->error_message, pnl->error_message);
 
   fnu      = pba->Omega0_ncdm_tot/Omega0_m;
   anorm    = 1./(2*pow(_PI_,2));
