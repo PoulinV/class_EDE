@@ -7217,7 +7217,7 @@ int perturb_derivs(double tau,
   /* for use with fluid (fld): */
   double w_fld,dw_over_da_fld,w_prime_fld,integral_fld;
   int n;
-
+  double width,center,z,cs2before,cs2after;
   /* for use with non-cold dark matter (ncdm): */
   int index_q,n_ncdm,idx;
   double q,epsilon,dlnf0_dlnq,qk_div_epsilon;
@@ -7635,9 +7635,16 @@ int perturb_derivs(double tau,
         if(w_fld != -1)ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
         else ca2 = w_fld;
         cs2 = pba->cs2_fld;
-        if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
-          if(cs2 !=0 && a > 1.5*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
-        }
+        // if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
+        //   // center = 1/pba->a_c[n]-1;
+        //   // z = 1/a-1;
+        //   // width = center*0.01;//found to work well at capturing the sharp transition
+        //   // cs2before = cs2;
+        //   // cs2after = w_fld;
+        //   // cs2 = (cs2before - cs2after)*(tanh((z - center)/width) + 1)/2 + cs2after;
+        //   // // printf("z %e cs2 %e ca2 %e \n",z, cs2, ca2);
+        //   if(cs2 !=0 && a > 1.5*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
+        // }
         // printf("a %e cs2 %e ca2 %e w_fld %e w_prime_fld %e \n", a,cs2,ca2,w_fld,w_prime_fld);
         /** - ----> fluid density */
         dy[pv->index_pt_delta_fld+n] =

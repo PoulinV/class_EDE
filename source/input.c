@@ -1094,7 +1094,8 @@ int input_read_parameters(
       class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
                  errmsg,
                  errmsg);
-        if(param2<=0){
+
+        if(flag2==_FALSE_){
         class_call(parser_read_list_of_doubles(pfc,
                                                "Omega_many_fld",
                                                &(pba->n_fld),
@@ -1131,7 +1132,7 @@ int input_read_parameters(
           class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
                      errmsg,
                      errmsg);
-          if(param2<=0){
+          if(flag2==_FALSE_){
             class_call(parser_read_list_of_doubles(pfc,
                                                    "Omega_many_fld",
                                                    &(pba->n_fld),
