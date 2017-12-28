@@ -759,7 +759,6 @@ int input_read_parameters(
     pba->Omega0_cdm = param2/pba->h/pba->h;
 
   Omega_tot += pba->Omega0_cdm;
-  printf("pba->Omega0_cdm %e\n", pba->Omega0_cdm);
     /** - TK added GDM here */
 
     // For the GDM eq of state w_gdm
@@ -1080,6 +1079,10 @@ int input_read_parameters(
                     errmsg,
                     errmsg);
          if(flag2==_FALSE_){
+
+
+
+
            class_call(parser_read_list_of_doubles(pfc,
                                                   "Omega_many_fld",
                                                   &(pba->n_fld),
@@ -1087,8 +1090,19 @@ int input_read_parameters(
                                                   &flag2,
                                                   errmsg),
                       errmsg,errmsg);
-            if(flag2!=_FALSE_){
+          class_call(parser_read_list_of_doubles(pfc,
+                                                 "fraction_axion",
+                                                 &(pba->n_fld),
+                                                 &(pba->Omega_many_fld),
+                                                 &flag3,
+                                                 errmsg),
+                     errmsg,errmsg);
+            if(flag2!=_FALSE_ || flag3!=_FALSE_){
+              class_test(flag2==_TRUE_&&flag3==_TRUE_,"you have passed both 'Omega_many_fld' and 'fraction_axion'. Please pass only one of them.",errmsg,errmsg);
               for(n = 0; n < pba->n_fld; n++){
+                if(flag3==_TRUE_){
+                  pba->Omega_many_fld[n] *= pba->Omega0_cdm;
+                }
                 Omega_tot += pba->Omega_many_fld[n];
               }
 
@@ -1125,11 +1139,26 @@ int input_read_parameters(
                                                   &flag2,
                                                   errmsg),
                       errmsg,errmsg);
-            if(flag2!=_FALSE_){
+          class_call(parser_read_list_of_doubles(pfc,
+                                                 "fraction_axion",
+                                                 &(pba->n_fld),
+                                                 &(pba->Omega_many_fld),
+                                                 &flag3,
+                                                 errmsg),
+                     errmsg,errmsg);
+            class_test(flag2==_TRUE_&&flag3==_TRUE_,"you have passed both 'Omega_many_fld' and 'fraction_axion'. Please pass only one of them.",errmsg,errmsg);
+            if(flag2!=_FALSE_ || flag3!=_FALSE_){
+
               for(n = 0; n < pba->n_fld; n++){
+                if(flag3==_TRUE_){
+                  pba->Omega_many_fld[n] *= pba->Omega0_cdm;
+                }
                 Omega_tot += pba->Omega_many_fld[n];
               }
-
+              // for(n = 0; n < pba->n_fld; n++){
+              //   pba->Omega0_cdm-=pba->Omega_many_fld[n]; //we keep Omega_cdm constant;
+              //   Omega_tot -= pba->Omega_many_fld[n];
+              // }
               class_call(parser_read_list_of_doubles(pfc,
                                                      "a_c",
                                                      &int1,
