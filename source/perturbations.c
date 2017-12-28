@@ -675,7 +675,6 @@ int perturb_indices_of_perturbs(
         if (pba->has_dcdm == _TRUE_)
           ppt->has_source_delta_dcdm = _TRUE_;
         if (pba->has_fld == _TRUE_  && pba->fld_has_perturbations == _TRUE_){
-          printf("here inside 678\n");
           ppt->has_source_delta_fld = _TRUE_;
         }
         if (pba->has_scf == _TRUE_)
@@ -2037,11 +2036,10 @@ int perturb_workspace_init(
       class_alloc(ppw->delta_ncdm,pba->N_ncdm*sizeof(double),ppt->error_message);
       class_alloc(ppw->theta_ncdm,pba->N_ncdm*sizeof(double),ppt->error_message);
       class_alloc(ppw->shear_ncdm,pba->N_ncdm*sizeof(double),ppt->error_message);
-      if(pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_){
-        class_alloc(ppw->delta_rho_fld,pba->n_fld*sizeof(double),ppt->error_message);
-        class_alloc(ppw->Gamma_prime_fld,pba->n_fld*sizeof(double),ppt->error_message);
-        class_alloc(ppw->rho_plus_p_theta_fld,pba->n_fld*sizeof(double),ppt->error_message);
-      }
+      class_alloc(ppw->delta_rho_fld,pba->n_fld*sizeof(double),ppt->error_message);
+      class_alloc(ppw->Gamma_prime_fld,pba->n_fld*sizeof(double),ppt->error_message);
+      class_alloc(ppw->rho_plus_p_theta_fld,pba->n_fld*sizeof(double),ppt->error_message);
+
     }
 
   }
@@ -2082,6 +2080,7 @@ int perturb_workspace_free (
       free(ppw->delta_rho_fld);
       free(ppw->Gamma_prime_fld);
       free(ppw->rho_plus_p_theta_fld);
+
     }
 
   }
@@ -2574,7 +2573,7 @@ int perturb_prepare_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles, "theta_scf", pba->has_scf);
       if(pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_ ){
         for(n = 0; n < pba->n_fld ;n++){
-              if(pba->use_ppf== _FALSE_){
+              if(pba->use_ppf == _FALSE_){
                 sprintf(tmp,"delta_fld[%d]",n);
                 class_store_columntitle(ppt->scalar_titles,tmp,_TRUE_);
                 sprintf(tmp,"theta_fld[%d]",n);
@@ -4173,6 +4172,7 @@ int perturb_initial_conditions(struct precision * ppr,
   double ktau_two,ktau_three;
   double f_dr;
   int n;
+  double cs2;
   double delta_tot;
   double velocity_tot;
   double s2_squared;
@@ -4342,8 +4342,13 @@ int perturb_initial_conditions(struct precision * ppr,
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
           // printf("1./a -1  %e w_fld %e\n", 1./a -1 ,w_fld);
           if (pba->use_ppf == _FALSE_) {
-            ppw->pv->y[ppw->pv->index_pt_delta_fld+n] = - ktau_two/4.*(1.+w_fld)*(4.-3.*pba->cs2_fld)/(4.-6.*w_fld+3.*pba->cs2_fld) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC: curvature
-            ppw->pv->y[ppw->pv->index_pt_theta_fld+n] = - k*ktau_three/4.*pba->cs2_fld/(4.-6.*w_fld+3.*pba->cs2_fld) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC:curvature
+            if(ppt->cs2_is_w == _TRUE_)cs2 = sqrt(w_fld*w_fld);
+            else cs2 = pba->cs2_fld;
+            // if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
+            //   if(a > 3*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
+            // }
+            ppw->pv->y[ppw->pv->index_pt_delta_fld+n] = - ktau_two/4.*(1.+w_fld)*(4.-3.*cs2)/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC: curvature
+            ppw->pv->y[ppw->pv->index_pt_theta_fld+n] = - k*ktau_three/4.*cs2/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC:curvature
           }
 
           /* if use_ppf == _TRUE_, y[ppw->pv->index_pt_Gamma_fld] will be automatically set to zero, and this is what we want (although one could probably work out some small nonzero initial conditions: TODO) */
@@ -4401,6 +4406,7 @@ int perturb_initial_conditions(struct precision * ppr,
               //   (8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared; //exact w=1/3 equation
               // theta_gdm = 0.; //exact w=1/3 equation in the synchronous gauge
               theta_gdm = - k*ktau_three*( 1./16.*ppt->ceff2_gdm + 2.*ppt->cvis2_gdm/3./(4.*fracnu+15.) ); //needs to be generalized to incorporate non-flat universe correction
+              // theta_gdm = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared; /* exact w =1/3 IC like velocity of ultra-relativistic neutrinos/relics */ //TBC
               /* velocity of gdm. No curvature, s2_sq or 'omega' dependence is assumed here */
 
               // if (theta_gdm != 0.0) {
@@ -7633,8 +7639,9 @@ int perturb_derivs(double tau,
         w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
         // if(w_fld==-1) w_fld = -0.999;
         if(w_fld != -1)ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
-        else ca2 = w_fld;
-        cs2 = pba->cs2_fld;
+        else ca2 = sqrt(w_fld*w_fld);
+        if(ppt->cs2_is_w == _TRUE_)cs2 = sqrt(w_fld*w_fld);
+        else cs2 = pba->cs2_fld;
         // if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
         //   // center = 1/pba->a_c[n]-1;
         //   // z = 1/a-1;
@@ -7643,7 +7650,7 @@ int perturb_derivs(double tau,
         //   // cs2after = w_fld;
         //   // cs2 = (cs2before - cs2after)*(tanh((z - center)/width) + 1)/2 + cs2after;
         //   // // printf("z %e cs2 %e ca2 %e \n",z, cs2, ca2);
-        //   if(cs2 !=0 && a > 1.5*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
+        //   if(cs2 !=0 && a > 3*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
         // }
         // printf("a %e cs2 %e ca2 %e w_fld %e w_prime_fld %e \n", a,cs2,ca2,w_fld,w_prime_fld);
         /** - ----> fluid density */

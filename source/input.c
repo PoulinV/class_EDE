@@ -1076,76 +1076,79 @@ int input_read_parameters(
        }
        else if((strstr(string1,"pheno_axion") != NULL)) {
          pba->w_fld_parametrization = pheno_axion;
+         class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
+                    errmsg,
+                    errmsg);
+         if(flag2==_FALSE_){
+           class_call(parser_read_list_of_doubles(pfc,
+                                                  "Omega_many_fld",
+                                                  &(pba->n_fld),
+                                                  &(pba->Omega_many_fld),
+                                                  &flag2,
+                                                  errmsg),
+                      errmsg,errmsg);
+            if(flag2!=_FALSE_){
+              for(n = 0; n < pba->n_fld; n++){
+                Omega_tot += pba->Omega_many_fld[n];
+              }
 
-         class_call(parser_read_list_of_doubles(pfc,
-                                                "a_c",
-                                                &(pba->n_fld),
-                                                &(pba->a_c),
-                                                &flag2,
-                                                errmsg),
-                    errmsg,errmsg);
-         class_call(parser_read_list_of_doubles(pfc,
-                                                "n_pheno_axion",
-                                                &(pba->n_fld),
-                                                &(pba->n_pheno_axion),
-                                                &flag2,
-                                                errmsg),
-                    errmsg,errmsg);
-      class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
-                 errmsg,
-                 errmsg);
+              class_call(parser_read_list_of_doubles(pfc,
+                                                     "a_c",
+                                                     &int1,
+                                                     &(pba->a_c),
+                                                     &flag2,
+                                                     errmsg),
+                         errmsg,errmsg);
+              class_test(int1!=pba->n_fld,"Careful: the list of 'a_c' isn't equal to the list of 'Omega_many_fld'!",errmsg,errmsg);
+              class_call(parser_read_list_of_doubles(pfc,
+                                                     "n_pheno_axion",
+                                                     &int1,
+                                                     &(pba->n_pheno_axion),
+                                                     &flag2,
+                                                     errmsg),
+                         errmsg,errmsg);
+               class_test(int1!=pba->n_fld,"Careful: the list of 'n_pheno_axion' isn't equal to the list of 'Omega_many_fld'!",errmsg,errmsg);
+            }
 
-        if(flag2==_FALSE_){
-        class_call(parser_read_list_of_doubles(pfc,
-                                               "Omega_many_fld",
-                                               &(pba->n_fld),
-                                               &(pba->Omega_many_fld),
-                                               &flag2,
-                                               errmsg),
-                   errmsg,errmsg);
-
-        for(n = 0; n<pba->n_fld; n++){
-          // printf("n %d nmax %d pba->Omega_many_fld[n] %e a_c %e n_pheno_axion %e \n", n, pba->n_fld,pba->Omega_many_fld[n],pba->a_c[n],pba->n_pheno_axion[n]);
-          if(pba->Omega_many_fld[n]>0)Omega_tot += pba->Omega_many_fld[n];
-        }
-      }
-        // if(pba->n_fld == 1)pba->Omega0_fld = pba->Omega_many_fld[0];
-         // class_read_double("a_c",pba->a_c);
-         // class_read_double("n_pheno_axion",pba->n_pheno_axion);
+         }
        }
        else if((strstr(string1,"pheno_alternative") != NULL)) {
          pba->w_fld_parametrization = pheno_alternative;
-         class_call(parser_read_list_of_doubles(pfc,
-                                                "a_c",
-                                                &(pba->n_fld),
-                                                &(pba->a_c),
-                                                &flag2,
-                                                errmsg),
-                    errmsg,errmsg);
-         class_call(parser_read_list_of_doubles(pfc,
-                                                "n_pheno_axion",
-                                                &(pba->n_fld),
-                                                &(pba->n_pheno_axion),
-                                                &flag2,
-                                                errmsg),
-                    errmsg,errmsg);
-          class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
-                     errmsg,
-                     errmsg);
-          if(flag2==_FALSE_){
-            class_call(parser_read_list_of_doubles(pfc,
-                                                   "Omega_many_fld",
-                                                   &(pba->n_fld),
-                                                   &(pba->Omega_many_fld),
-                                                   &flag2,
-                                                   errmsg),
-                       errmsg,errmsg);
-            for(n = 0; n < pba->n_fld; n++){
-              Omega_tot += pba->Omega_many_fld[n];
-            }
-          }
+         class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
+                    errmsg,
+                    errmsg);
+         if(flag2==_FALSE_){
+           class_call(parser_read_list_of_doubles(pfc,
+                                                  "Omega_many_fld",
+                                                  &(pba->n_fld),
+                                                  &(pba->Omega_many_fld),
+                                                  &flag2,
+                                                  errmsg),
+                      errmsg,errmsg);
+            if(flag2!=_FALSE_){
+              for(n = 0; n < pba->n_fld; n++){
+                Omega_tot += pba->Omega_many_fld[n];
+              }
 
-          // if(pba->n_fld == 1)pba->Omega0_fld = pba->Omega_many_fld[0];
+              class_call(parser_read_list_of_doubles(pfc,
+                                                     "a_c",
+                                                     &int1,
+                                                     &(pba->a_c),
+                                                     &flag2,
+                                                     errmsg),
+                         errmsg,errmsg);
+              class_test(int1!=pba->n_fld,"Careful: the list of 'a_c' isn't equal to the list of 'Omega_many_fld'!",errmsg,errmsg);
+              class_call(parser_read_list_of_doubles(pfc,
+                                                     "n_pheno_axion",
+                                                     &int1,
+                                                     &(pba->n_pheno_axion),
+                                                     &flag2,
+                                                     errmsg),
+                         errmsg,errmsg);
+               class_test(int1!=pba->n_fld,"Careful: the list of 'n_pheno_axion' isn't equal to the list of 'Omega_many_fld'!",errmsg,errmsg);
+            }
+
+         }
 
        }
        else{
@@ -1156,6 +1159,7 @@ int input_read_parameters(
        class_read_double("w0_fld",pba->w0_fld);
        class_read_double("wa_fld",pba->wa_fld);
      }
+
      class_call(parser_read_string(pfc,
                                    "fld_has_perturbations",
                                    &(string1),
@@ -1180,7 +1184,22 @@ int input_read_parameters(
 
 
       class_read_double("cs2_fld",pba->cs2_fld);
+      class_call(parser_read_string(pfc,
+                                    "cs2_is_w",
+                                    &string1,
+                                    &flag1,
+                                    errmsg),
+                  errmsg,
+                  errmsg);
 
+      if (flag1 == _TRUE_){
+        if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+          ppt->cs2_is_w = _TRUE_;
+        }
+        else {
+          ppt->cs2_is_w = _FALSE_;
+        }
+      }
       class_call(parser_read_string(pfc,
                                     "use_ppf",
                                     &string1,
@@ -3166,6 +3185,7 @@ int input_default_params(
   pba->cs2_fld=1.;
   pba->w_fld_parametrization = CPL;
   pba->a_c = NULL;
+  pba->Omega_many_fld = NULL;
   pba->n_fld = 0;
   pba->n_pheno_axion = NULL;
   pba->use_ppf = _TRUE_;
