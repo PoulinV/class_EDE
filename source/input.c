@@ -3183,6 +3183,7 @@ int input_default_params(
   pba->w0_fld=-1.;
   pba->wa_fld=0.;
   pba->cs2_fld=1.;
+  ppt->cs2_is_w = _FALSE_;
   pba->w_fld_parametrization = CPL;
   pba->a_c = NULL;
   pba->Omega_many_fld = NULL;
