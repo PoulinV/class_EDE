@@ -553,10 +553,8 @@ int background_w_fld(
   //   // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
   // }
   else if(pba->w_fld_parametrization == w_free_function){
-    // if(pba->w_free_function_from_file == _TRUE_)
-    // printf("pba->w_free_function_number_of_knots %d\n", pba->w_free_function_number_of_knots);
-    interpolate_w_free_function_from_file_at_a(pba,a_rel,&w,&dw);
-    // else interpolate_w_free_function_at_a(pba,a_rel,&w,&dw);
+    if(pba->w_free_function_from_file == _TRUE_)interpolate_w_free_function_from_file_at_a(pba,a_rel,&w,&dw);
+    else interpolate_w_free_function_at_a(pba,a_rel,&w,&dw);
     *w_fld = w;
     *dw_over_da_fld = dw;
     *integral_fld=0; //will be computed later in background_init once and for all;
@@ -588,7 +586,7 @@ int w_free_function_init( struct precision *ppr,
      if(pba->w_free_function_from_file==_TRUE_){
 
        class_open(fA,ppr->w_free_function_file, "r",pba->error_message);
-
+       pba->w_free_function_number_of_columns =  1;
          /* go through each line */
          while (fgets(line,_LINE_LENGTH_MAX_-1,fA) != NULL) {
            /* eliminate blank spaces at beginning of line */
@@ -612,7 +610,6 @@ int w_free_function_init( struct precision *ppr,
                class_test(sscanf(line,"%d",&num_lines) != 1,
                           pba->error_message,
                           "could not read value of parameters num_lines in file %s\n",ppr->w_free_function_file);
-               printf("num_lines %d\n", num_lines);
                class_alloc(pba->w_free_function_redshift_at_knot,num_lines*sizeof(double),pba->error_message);
                class_alloc(pba->w_free_function_at_knot,num_lines*sizeof(double),pba->error_message);
                class_alloc(pba->w_free_function_d_at_knot,num_lines*sizeof(double),pba->error_message);
@@ -711,6 +708,7 @@ int w_free_function_init( struct precision *ppr,
         }
 
      }
+
         // for(int i=0;i<pba->w_free_function_number_of_knots*pba->w_free_function_number_of_columns;i++){
         //   printf("pba->w_free_function_at_knot %e\n",pba->w_free_function_at_knot[i]);
         // }
@@ -2416,7 +2414,7 @@ int background_initial_conditions(
       if(pba->w_fld_parametrization == w_free_function) {
         if(pba->w_free_function_from_file == _TRUE_){
           is_log = _FALSE_;
-        class_call(romberg_integrate_w_free_function(pba,a,pba->a_today,30,1e-4,&tmp_integral,is_log,n),pba->error_message, pba->error_message);
+        class_call(romberg_integrate_w_free_function(pba,a,pba->a_today,20,1e-4,&tmp_integral,is_log,n),pba->error_message, pba->error_message);
         integral_fld=tmp_integral;
         // integral_fld = 6.6671e-7;
         }

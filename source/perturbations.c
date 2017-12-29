@@ -4342,6 +4342,7 @@ int perturb_initial_conditions(struct precision * ppr,
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
           // printf("1./a -1  %e w_fld %e\n", 1./a -1 ,w_fld);
           if (pba->use_ppf == _FALSE_) {
+            // if(w_fld==-1)w_fld+=0.3;
             if(ppt->cs2_is_w == _TRUE_)cs2 = sqrt(w_fld*w_fld);
             else cs2 = pba->cs2_fld;
             // if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
@@ -6858,7 +6859,7 @@ int perturb_print_variables(double tau,
         theta_scf += k*k*alpha;
       }
 
-      if (pba->has_fld == _TRUE_  && pba->use_ppf == _FALSE_){
+      if (pba->has_fld == _TRUE_  && pba->use_ppf == _FALSE_ && pba->fld_has_perturbations == _TRUE_){
         for(n = 0; n<pba->n_fld; n++){
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
           delta_fld[n] += alpha*(-3.0*H*(1.0+w_fld));
@@ -7637,9 +7638,9 @@ int perturb_derivs(double tau,
 
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
         w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-        // if(w_fld==-1) w_fld = -0.999;
+        // if(w_fld==-1) w_fld += 0.3;
         if(w_fld != -1)ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
-        else ca2 = sqrt(w_fld*w_fld);
+        else ca2 = w_fld;
         if(ppt->cs2_is_w == _TRUE_)cs2 = sqrt(w_fld*w_fld);
         else cs2 = pba->cs2_fld;
         // if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){

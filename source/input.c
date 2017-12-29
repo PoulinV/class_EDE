@@ -1072,6 +1072,18 @@ int input_read_parameters(
      if (flag1 == _TRUE_) {
        if((strstr(string1,"w_free_function") != NULL)) {
          pba->w_fld_parametrization = w_free_function;
+         class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
+                    errmsg,
+                    errmsg);
+         if(flag2==_FALSE_){
+           class_call(parser_read_double(pfc,"fraction_axion",&param2,&flag2,errmsg),
+                      errmsg,
+                      errmsg);
+            pba->Omega0_fld = param2*pba->Omega0_cdm;
+            Omega_tot += pba->Omega0_fld;
+            pba->n_fld = 1;
+          }
+
        }
        else if((strstr(string1,"pheno_axion") != NULL)) {
          pba->w_fld_parametrization = pheno_axion;
@@ -1187,6 +1199,17 @@ int input_read_parameters(
      if(pba->w_fld_parametrization == CPL){
        class_read_double("w0_fld",pba->w0_fld);
        class_read_double("wa_fld",pba->wa_fld);
+       class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
+                  errmsg,
+                  errmsg);
+       if(flag2==_FALSE_){
+         class_call(parser_read_double(pfc,"fraction_axion",&param2,&flag2,errmsg),
+                    errmsg,
+                    errmsg);
+          pba->Omega0_fld = param2*pba->Omega0_cdm;
+          Omega_tot += pba->Omega0_fld;
+          pba->n_fld = 1;
+        }
      }
 
      class_call(parser_read_string(pfc,
