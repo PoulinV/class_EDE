@@ -1117,7 +1117,11 @@ int input_read_parameters(
                 }
                 Omega_tot += pba->Omega_many_fld[n];
               }
-
+            }
+            }
+            else{
+              pba->n_fld = 1;
+            }
               class_call(parser_read_list_of_doubles(pfc,
                                                      "a_c",
                                                      &int1,
@@ -1134,9 +1138,9 @@ int input_read_parameters(
                                                      errmsg),
                          errmsg,errmsg);
                class_test(int1!=pba->n_fld,"Careful: the list of 'n_pheno_axion' isn't equal to the list of 'Omega_many_fld'!",errmsg,errmsg);
-            }
 
-         }
+
+
        }
        else if((strstr(string1,"pheno_alternative") != NULL)) {
          pba->w_fld_parametrization = pheno_alternative;
@@ -1144,6 +1148,10 @@ int input_read_parameters(
                     errmsg,
                     errmsg);
          if(flag2==_FALSE_){
+
+
+
+
            class_call(parser_read_list_of_doubles(pfc,
                                                   "Omega_many_fld",
                                                   &(pba->n_fld),
@@ -1158,19 +1166,19 @@ int input_read_parameters(
                                                  &flag3,
                                                  errmsg),
                      errmsg,errmsg);
-            class_test(flag2==_TRUE_&&flag3==_TRUE_,"you have passed both 'Omega_many_fld' and 'fraction_axion'. Please pass only one of them.",errmsg,errmsg);
             if(flag2!=_FALSE_ || flag3!=_FALSE_){
-
+              class_test(flag2==_TRUE_&&flag3==_TRUE_,"you have passed both 'Omega_many_fld' and 'fraction_axion'. Please pass only one of them.",errmsg,errmsg);
               for(n = 0; n < pba->n_fld; n++){
                 if(flag3==_TRUE_){
                   pba->Omega_many_fld[n] *= pba->Omega0_cdm;
                 }
                 Omega_tot += pba->Omega_many_fld[n];
               }
-              // for(n = 0; n < pba->n_fld; n++){
-              //   pba->Omega0_cdm-=pba->Omega_many_fld[n]; //we keep Omega_cdm constant;
-              //   Omega_tot -= pba->Omega_many_fld[n];
-              // }
+            }
+            }
+            else{
+              pba->n_fld = 1;
+            }
               class_call(parser_read_list_of_doubles(pfc,
                                                      "a_c",
                                                      &int1,
@@ -1187,9 +1195,6 @@ int input_read_parameters(
                                                      errmsg),
                          errmsg,errmsg);
                class_test(int1!=pba->n_fld,"Careful: the list of 'n_pheno_axion' isn't equal to the list of 'Omega_many_fld'!",errmsg,errmsg);
-            }
-
-         }
 
        }
        else{
