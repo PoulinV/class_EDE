@@ -326,6 +326,8 @@ struct perturbs
 
   //@}
 
+  short use_big_theta_fld;
+
   /** @name - list of k values for each mode */
 
   //@{
@@ -429,6 +431,7 @@ struct perturb_vector
   int index_pt_theta_dcdm; /**< dcdm velocity */
   int index_pt_delta_fld;  /**< dark energy density in true fluid case */
   int index_pt_theta_fld;  /**< dark energy velocity in true fluid case */
+  int index_pt_big_theta_fld;  /**< dark energy velocity divided by (1+w_fld) in true fluid case */
   int index_pt_Gamma_fld;  /**< unique dark energy dynamical variable in PPF case */
   int index_pt_phi_scf;  /**< scalar field density */
   int index_pt_phi_prime_scf;  /**< scalar field velocity */

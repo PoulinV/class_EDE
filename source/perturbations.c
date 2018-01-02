@@ -3161,7 +3161,12 @@ int perturb_vector_init(
 
     if (pba->has_fld == _TRUE_ && pba->use_ppf == _FALSE_ && pba->fld_has_perturbations == _TRUE_) {
       class_define_index(ppv->index_pt_delta_fld,pba->has_fld,index_pt,pba->n_fld); /* fluid density */
-      class_define_index(ppv->index_pt_theta_fld,pba->has_fld,index_pt,pba->n_fld); /* fluid velocity */
+      if(ppt->use_big_theta_fld == _TRUE_){
+        class_define_index(ppv->index_pt_big_theta_fld,pba->has_fld,index_pt,pba->n_fld); /* fluid velocity */
+      }
+      else {
+        class_define_index(ppv->index_pt_theta_fld,pba->has_fld,index_pt,pba->n_fld); /* fluid velocity */
+      }
     }
     else if(pba->has_fld == _TRUE_ && pba->use_ppf == _TRUE_ && pba->fld_has_perturbations == _TRUE_){
       class_define_index(ppv->index_pt_Gamma_fld,pba->has_fld,index_pt,pba->n_fld); /* Gamma variable of PPF scheme */
@@ -3599,8 +3604,10 @@ int perturb_vector_init(
             ppv->y[ppv->index_pt_delta_fld+n] =
               ppw->pv->y[ppw->pv->index_pt_delta_fld+n];
 
-            ppv->y[ppv->index_pt_theta_fld+n] =
-              ppw->pv->y[ppw->pv->index_pt_theta_fld+n];
+          if(ppt->use_big_theta_fld == _TRUE_){ppv->y[ppv->index_pt_big_theta_fld+n] =
+              ppw->pv->y[ppw->pv->index_pt_big_theta_fld+n];}
+          else {ppv->y[ppv->index_pt_theta_fld+n] =
+              ppw->pv->y[ppw->pv->index_pt_theta_fld+n];}
           }
           else {
             ppv->y[ppv->index_pt_Gamma_fld+n] =
@@ -4349,7 +4356,8 @@ int perturb_initial_conditions(struct precision * ppr,
             //   if(a > 3*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
             // }
             ppw->pv->y[ppw->pv->index_pt_delta_fld+n] = - ktau_two/4.*(1.+w_fld)*(4.-3.*cs2)/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC: curvature
-            ppw->pv->y[ppw->pv->index_pt_theta_fld+n] = - k*ktau_three/4.*cs2/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC:curvature
+            if(ppt->use_big_theta_fld == _TRUE_) ppw->pv->y[ppw->pv->index_pt_big_theta_fld+n] = - (1+w_fld)*k*ktau_three/4.*cs2/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared;
+            else ppw->pv->y[ppw->pv->index_pt_theta_fld+n] = - k*ktau_three/4.*cs2/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC:curvature
           }
 
           /* if use_ppf == _TRUE_, y[ppw->pv->index_pt_Gamma_fld] will be automatically set to zero, and this is what we want (although one could probably work out some small nonzero initial conditions: TODO) */
@@ -4639,7 +4647,8 @@ int perturb_initial_conditions(struct precision * ppr,
         for(n = 0; n < pba->n_fld; n++){
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
           ppw->pv->y[ppw->pv->index_pt_delta_fld+n] += 3*(1.+w_fld)*a_prime_over_a*alpha;
-          ppw->pv->y[ppw->pv->index_pt_theta_fld+n] += k*k*alpha;
+          if(ppt->use_big_theta_fld == _TRUE_) ppw->pv->y[ppw->pv->index_pt_big_theta_fld+n] += (1+w_fld)*k*k*alpha;
+          else ppw->pv->y[ppw->pv->index_pt_theta_fld+n] += k*k*alpha;
         }
       }
 
@@ -5782,7 +5791,8 @@ int perturb_total_stress_energy(
 
         if (pba->use_ppf == _FALSE_) {
           ppw->delta_rho_fld[n] = ppw->pvecback[pba->index_bg_rho_fld+n]*y[ppw->pv->index_pt_delta_fld+n];
-          ppw->rho_plus_p_theta_fld[n] = (1.+w_fld)*ppw->pvecback[pba->index_bg_rho_fld+n]*y[ppw->pv->index_pt_theta_fld+n];
+          if(ppt->use_big_theta_fld == _TRUE_)ppw->rho_plus_p_theta_fld[n] = ppw->pvecback[pba->index_bg_rho_fld+n]*y[ppw->pv->index_pt_big_theta_fld+n];
+          else ppw->rho_plus_p_theta_fld[n] = (1.+w_fld)*ppw->pvecback[pba->index_bg_rho_fld+n]*y[ppw->pv->index_pt_theta_fld+n];
         }
         else {
           s2sq = ppw->s_l[2]*ppw->s_l[2];
@@ -5802,7 +5812,7 @@ int perturb_total_stress_energy(
             (ppw->S_fld-Gamma_prime_plus_a_prime_over_a_Gamma/a_prime_over_a);
           ppw->delta_rho_fld[n] = -2./3.*k2*s2sq/a2*y[ppw->pv->index_pt_Gamma_fld+n]-3*a_prime_over_a/k2*ppw->rho_plus_p_theta_fld[n];
         }
-        // printf("here n %d ppw->delta_rho_fld[n] %e ppw->rho_plus_p_theta_fld[n] %e \n", n, ppw->delta_rho_fld[n],ppw->rho_plus_p_theta_fld[n]);
+        printf("here n %d ppw->delta_rho_fld[n] %e ppw->rho_plus_p_theta_fld[n] %e \n", n, ppw->delta_rho_fld[n],ppw->rho_plus_p_theta_fld[n]);
 
         ppw->delta_rho += ppw->delta_rho_fld[n];
         ppw->rho_plus_p_theta += ppw->rho_plus_p_theta_fld[n];
@@ -6553,7 +6563,7 @@ int perturb_print_variables(double tau,
   double delta_b,theta_b;
   double delta_cdm=0.,theta_cdm=0.;
   double delta_dcdm=0.,theta_dcdm=0.;
-  double *delta_fld=NULL,*theta_fld=NULL;
+  double *delta_fld=NULL,*theta_fld=NULL,*big_theta_fld=NULL;
   double delta_dr=0.,theta_dr=0.,shear_dr=0., f_dr=1.0;
   double delta_ur=0.,theta_ur=0.,shear_ur=0.,l4_ur=0.;
   // TK added GDM here
@@ -6608,7 +6618,12 @@ int perturb_print_variables(double tau,
   if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_){
     if(pba->use_ppf == _FALSE_){
       class_alloc(delta_fld, sizeof(double)*pba->n_fld,error_message);
-      class_alloc(theta_fld, sizeof(double)*pba->n_fld,error_message);
+      if(ppt->use_big_theta_fld == _TRUE_){
+        class_alloc(big_theta_fld, sizeof(double)*pba->n_fld,error_message);
+      }
+      else {
+        class_alloc(theta_fld, sizeof(double)*pba->n_fld,error_message);
+      }
     }
     else class_alloc(Gamma_fld, sizeof(double)*pba->n_fld,error_message);
   }
@@ -6694,7 +6709,8 @@ int perturb_print_variables(double tau,
       if (pba->has_fld == _TRUE_ && pba->use_ppf == _FALSE_) {
           for(n = 0; n<pba->n_fld; n++){
             delta_fld[n] = y[ppw->pv->index_pt_delta_fld+n];
-            theta_fld[n] = y[ppw->pv->index_pt_theta_fld+n];
+            if(ppt->use_big_theta_fld == _TRUE_) big_theta_fld[n] = y[ppw->pv->index_pt_big_theta_fld+n];
+            else theta_fld[n] = y[ppw->pv->index_pt_theta_fld+n];
           }
         }
       if (pba->has_fld == _TRUE_ && pba->use_ppf == _TRUE_) {
@@ -6863,7 +6879,8 @@ int perturb_print_variables(double tau,
         for(n = 0; n<pba->n_fld; n++){
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
           delta_fld[n] += alpha*(-3.0*H*(1.0+w_fld));
-          theta_fld[n] += k*k*alpha;
+          if(ppt->use_big_theta_fld == _TRUE_) big_theta_fld[n]+=(1+w_fld)*k*k*alpha;
+          else theta_fld[n] += k*k*alpha;
         }
       }
 
@@ -7003,7 +7020,12 @@ int perturb_print_variables(double tau,
     if(pba->fld_has_perturbations == _TRUE_ && pba->use_ppf == _FALSE_){
       for(n = 0; n<pba->n_fld; n++){
       class_store_double(dataptr, delta_fld[n], pba->has_fld, storeidx);
-      class_store_double(dataptr, theta_fld[n], pba->has_fld, storeidx);
+      if(ppt->use_big_theta_fld == _TRUE_) {
+        class_store_double(dataptr, big_theta_fld[n], pba->has_fld, storeidx);
+      }
+      else {
+        class_store_double(dataptr, theta_fld[n], pba->has_fld, storeidx);
+      }
       }
     }
     else if(pba->fld_has_perturbations == _TRUE_ && pba->use_ppf == _TRUE_){
@@ -7143,7 +7165,8 @@ int perturb_print_variables(double tau,
   }
   if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_){
     free(delta_fld);
-    free(theta_fld);
+    if(ppt->use_big_theta_fld == _TRUE_) free(big_theta_fld);
+    else free(theta_fld);
   }
 
   return _SUCCESS_;
@@ -7654,19 +7677,45 @@ int perturb_derivs(double tau,
         //   if(cs2 !=0 && a > 3*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
         // }
         // printf("a %e cs2 %e ca2 %e w_fld %e w_prime_fld %e \n", a,cs2,ca2,w_fld,w_prime_fld);
+
         /** - ----> fluid density */
-        dy[pv->index_pt_delta_fld+n] =
+        dy[pv->index_pt_delta_fld+n] = -3.*(cs2-w_fld)*a_prime_over_a*y[pv->index_pt_delta_fld+n];
+
+
+        if(ppt->use_big_theta_fld == _TRUE_){
+          dy[pv->index_pt_delta_fld+n] +=
+          -(y[pv->index_pt_big_theta_fld+n]+(1+w_fld)*metric_continuity)
+          -9.*(cs2-ca2)*a_prime_over_a*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]/k2;
+        }
+        else {
+          dy[pv->index_pt_delta_fld+n] +=
           -(1+w_fld)*(y[pv->index_pt_theta_fld+n]+metric_continuity)
-          -3.*(cs2-w_fld)*a_prime_over_a*y[pv->index_pt_delta_fld+n]
           -9.*(1+w_fld)*(cs2-ca2)*a_prime_over_a*a_prime_over_a*y[pv->index_pt_theta_fld+n]/k2;
+        }
+        /* Original equation */
+        // dy[pv->index_pt_delta_fld+n] =
+        //   -(1+w_fld)*(y[pv->index_pt_theta_fld+n]+metric_continuity)
+        //   -3.*(cs2-w_fld)*a_prime_over_a*y[pv->index_pt_delta_fld+n]
+        //   -9.*(1+w_fld)*(cs2-ca2)*a_prime_over_a*a_prime_over_a*y[pv->index_pt_theta_fld+n]/k2;
 
         /** - ----> fluid velocity */
-
+      if(ppt->use_big_theta_fld == _TRUE_){
+        dy[pv->index_pt_big_theta_fld+n] = /* fluid velocity */
+          y[pv->index_pt_big_theta_fld+n]*w_prime_fld/(1+w_fld)
+          -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
+          +cs2*k2*y[pv->index_pt_delta_fld+n]
+          +metric_euler;
+        printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
+      }
+      else {
         dy[pv->index_pt_theta_fld+n] = /* fluid velocity */
           -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_theta_fld+n]
           +cs2*k2/(1.+w_fld)*y[pv->index_pt_delta_fld+n]
           +metric_euler;
-        // printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_theta_fld+n] %e y[pv->index_pt_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_theta_fld+n],y[pv->index_pt_theta_fld+n]);
+        printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_theta_fld+n] %e y[pv->index_pt_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_theta_fld+n],y[pv->index_pt_theta_fld+n]);
+      }
+
+
       }
       else {
         dy[pv->index_pt_Gamma_fld+n] = ppw->Gamma_prime_fld[n]; /* Gamma variable of PPF formalism */

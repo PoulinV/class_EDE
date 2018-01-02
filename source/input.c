@@ -1274,6 +1274,22 @@ int input_read_parameters(
           pba->use_ppf = _FALSE_;
         }
       }
+      class_call(parser_read_string(pfc,
+                                    "use_big_theta_fld",
+                                    &string1,
+                                    &flag1,
+                                    errmsg),
+                  errmsg,
+                  errmsg);
+
+      if (flag1 == _TRUE_){
+        if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+          ppt->use_big_theta_fld = _TRUE_;
+        }
+        else {
+          ppt->use_big_theta_fld = _FALSE_;
+        }
+      }
 
     }
 
@@ -3247,6 +3263,7 @@ int input_default_params(
   pba->n_fld = 0;
   pba->n_pheno_axion = NULL;
   pba->use_ppf = _TRUE_;
+  ppt->use_big_theta_fld = _FALSE_;
   pba->c_gamma_over_c_fld = 0.4;
   pba->fld_has_perturbations = _TRUE_;
 
