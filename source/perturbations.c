@@ -5812,7 +5812,7 @@ int perturb_total_stress_energy(
             (ppw->S_fld-Gamma_prime_plus_a_prime_over_a_Gamma/a_prime_over_a);
           ppw->delta_rho_fld[n] = -2./3.*k2*s2sq/a2*y[ppw->pv->index_pt_Gamma_fld+n]-3*a_prime_over_a/k2*ppw->rho_plus_p_theta_fld[n];
         }
-        printf("here n %d ppw->delta_rho_fld[n] %e ppw->rho_plus_p_theta_fld[n] %e \n", n, ppw->delta_rho_fld[n],ppw->rho_plus_p_theta_fld[n]);
+        // printf("here n %d ppw->delta_rho_fld[n] %e ppw->rho_plus_p_theta_fld[n] %e \n", n, ppw->delta_rho_fld[n],ppw->rho_plus_p_theta_fld[n]);
 
         ppw->delta_rho += ppw->delta_rho_fld[n];
         ppw->rho_plus_p_theta += ppw->rho_plus_p_theta_fld[n];
@@ -7017,20 +7017,20 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, theta_scf, pba->has_scf, storeidx);
     /* Fluid*/
     // printf("here\n");
-    if(pba->fld_has_perturbations == _TRUE_ && pba->use_ppf == _FALSE_){
+    if( pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_ && pba->use_ppf == _FALSE_){
       for(n = 0; n<pba->n_fld; n++){
-      class_store_double(dataptr, delta_fld[n], pba->has_fld, storeidx);
+      class_store_double(dataptr, delta_fld[n], _TRUE_, storeidx);
       if(ppt->use_big_theta_fld == _TRUE_) {
-        class_store_double(dataptr, big_theta_fld[n], pba->has_fld, storeidx);
+        class_store_double(dataptr, big_theta_fld[n], _TRUE_, storeidx);
       }
       else {
-        class_store_double(dataptr, theta_fld[n], pba->has_fld, storeidx);
+        class_store_double(dataptr, theta_fld[n], _TRUE_, storeidx);
       }
       }
     }
-    else if(pba->fld_has_perturbations == _TRUE_ && pba->use_ppf == _TRUE_){
+    else if(pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_ && pba->use_ppf == _TRUE_){
       for(n = 0; n<pba->n_fld; n++){
-      class_store_double(dataptr, Gamma_fld[n], pba->has_fld, storeidx);
+      class_store_double(dataptr, Gamma_fld[n], _TRUE_, storeidx);
       }
     }
 
@@ -7705,14 +7705,14 @@ int perturb_derivs(double tau,
           -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
           +cs2*k2*y[pv->index_pt_delta_fld+n]
           +metric_euler;
-        printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
+        // printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
       }
       else {
         dy[pv->index_pt_theta_fld+n] = /* fluid velocity */
           -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_theta_fld+n]
           +cs2*k2/(1.+w_fld)*y[pv->index_pt_delta_fld+n]
           +metric_euler;
-        printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_theta_fld+n] %e y[pv->index_pt_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_theta_fld+n],y[pv->index_pt_theta_fld+n]);
+        // printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_theta_fld+n] %e y[pv->index_pt_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_theta_fld+n],y[pv->index_pt_theta_fld+n]);
       }
 
 
