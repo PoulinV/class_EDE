@@ -7704,7 +7704,7 @@ int perturb_derivs(double tau,
           y[pv->index_pt_big_theta_fld+n]*w_prime_fld/(1+w_fld)
           -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
           +cs2*k2*y[pv->index_pt_delta_fld+n]
-          +metric_euler;
+          +(1+w_fld)*metric_euler;
         // printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
       }
       else {
