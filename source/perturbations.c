@@ -2521,8 +2521,8 @@ int perturb_prepare_output(struct background * pba,
     /** Write titles for all perturbations that we would like to print/store. */
     if (ppt->has_scalars == _TRUE_){
 
-      class_store_columntitle(ppt->scalar_titles,"tau [Mpc]",_TRUE_);
       class_store_columntitle(ppt->scalar_titles,"a",_TRUE_);
+      class_store_columntitle(ppt->scalar_titles,"tau [Mpc]",_TRUE_);
       class_store_columntitle(ppt->scalar_titles,"delta_g",_TRUE_);
       class_store_columntitle(ppt->scalar_titles,"theta_g",_TRUE_);
       class_store_columntitle(ppt->scalar_titles,"shear_g",_TRUE_);
@@ -4350,7 +4350,11 @@ int perturb_initial_conditions(struct precision * ppr,
           // printf("1./a -1  %e w_fld %e\n", 1./a -1 ,w_fld);
           if (pba->use_ppf == _FALSE_) {
             // if(w_fld==-1)w_fld+=0.3;
-            if(ppt->cs2_is_w == _TRUE_)cs2 = sqrt(w_fld*w_fld);
+            if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
+              // cs2=pba->cs2_fld;
+              // if(a>pba->a_c[n])cs2=fabs(w_fld);
+              cs2=fabs(w_fld);
+            }
             else cs2 = pba->cs2_fld;
             // if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
             //   if(a > 3*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
@@ -5509,7 +5513,7 @@ int perturb_total_stress_energy(
   int index_q,n_ncdm,idx;
   double epsilon,q,q2,cg2_ncdm,w_ncdm,rho_ncdm_bg,p_ncdm_bg,pseudo_p_ncdm;
   double rho_m,delta_rho_m,rho_plus_p_m,rho_plus_p_theta_m;
-  double w_fld,dw_over_da_fld,integral_fld;
+  double w_fld,dw_over_da_fld,integral_fld,cs2;
   int n;
   double gwncdm;
   double rho_relativistic;
@@ -5816,7 +5820,13 @@ int perturb_total_stress_energy(
 
         ppw->delta_rho += ppw->delta_rho_fld[n];
         ppw->rho_plus_p_theta += ppw->rho_plus_p_theta_fld[n];
-        ppw->delta_p += pba->cs2_fld * ppw->delta_rho_fld[n];
+        if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
+          // cs2=pba->cs2_fld;
+          // if(a>pba->a_c[n])cs2=fabs(w_fld);
+          cs2=fabs(w_fld);
+        }
+        else cs2=pba->cs2_fld;
+        ppw->delta_p += cs2 * ppw->delta_rho_fld[n];
 
       }
 
@@ -6331,7 +6341,6 @@ int perturb_sources(
 
     /* delta_g */
     if (ppt->has_source_delta_g == _TRUE_)  {
-      printf("here g\n");
       _set_source_(ppt->index_tp_delta_g) = delta_g;
     }
 
@@ -6342,7 +6351,6 @@ int perturb_sources(
 
     /* delta_cdm */
     if (ppt->has_source_delta_cdm == _TRUE_) {
-      printf("here cdm\n");
       _set_source_(ppt->index_tp_delta_cdm) = y[ppw->pv->index_pt_delta_cdm];
     }
 
@@ -6958,8 +6966,8 @@ int perturb_print_variables(double tau,
       ppt->size_scalar_perturbation_data[ppw->index_ikout];
     ppt->size_scalar_perturbation_data[ppw->index_ikout] += ppt->number_of_scalar_titles;
 
-    class_store_double(dataptr, tau, _TRUE_, storeidx);
     class_store_double(dataptr, pvecback[pba->index_bg_a], _TRUE_, storeidx);
+    class_store_double(dataptr, tau, _TRUE_, storeidx);
     class_store_double(dataptr, delta_g, _TRUE_, storeidx);
     class_store_double(dataptr, theta_g, _TRUE_, storeidx);
     class_store_double(dataptr, shear_g, _TRUE_, storeidx);
@@ -7664,7 +7672,11 @@ int perturb_derivs(double tau,
         // if(w_fld==-1) w_fld += 0.3;
         if(w_fld != -1)ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
         else ca2 = w_fld;
-        if(ppt->cs2_is_w == _TRUE_)cs2 = sqrt(w_fld*w_fld);
+        if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
+          // cs2=pba->cs2_fld;
+          // if(a> pba->a_c[n])cs2=fabs(w_fld);
+          cs2=fabs(w_fld);
+        }
         else cs2 = pba->cs2_fld;
         // if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
         //   // center = 1/pba->a_c[n]-1;
