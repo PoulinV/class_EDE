@@ -188,6 +188,7 @@ struct background
   int index_bg_rho_lambda;    /**< cosmological constant density */
   int index_bg_rho_fld;       /**< fluid density */
   int index_bg_w_fld;         /**< fluid equation of state */
+  int index_bg_dw_fld;         /**< derivative of fluid equation of state */
   int index_bg_rho_ur;        /**< relativistic neutrinos/relics density */
   int index_bg_rho_dcdm;      /**< dcdm density */
   int index_bg_rho_dr;        /**< dr density */

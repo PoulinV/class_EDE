@@ -990,71 +990,6 @@ int input_read_parameters(
   }
   Omega_tot += pba->Omega0_ncdm_tot;
 
-  class_call(parser_read_string(pfc,
-                                "w_free_function_from_file",
-                                &(string1),
-                                &(flag1),
-                                errmsg),
-             errmsg,
-             errmsg);
-
-  if (flag1 == _TRUE_) {
-    if ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)) {
-      pba->w_free_function_from_file = _TRUE_;
-    }
-    else {
-      if ((strstr(string1,"n") != NULL) || (strstr(string1,"N") != NULL)) {
-        pba->w_free_function_from_file = _FALSE_;
-      }
-      else {
-        class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_from_file'",string1);
-      }
-    }
-  }
-  class_read_string("w_free_function_file",ppr->w_free_function_file);
-
-  class_read_double("w_free_function_number_of_knots",pba->w_free_function_number_of_knots);
-  double *tmp_w_free_function;
-  if(pba->w_free_function_number_of_knots > 0){
-
-
-        class_call(parser_read_string(pfc,
-                                      "w_free_function_interpolation_is_linear",
-                                      &(string1),
-                                      &(flag1),
-                                      errmsg),
-                   errmsg,
-                   errmsg);
-
-        if (flag1 == _TRUE_) {
-          if ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)) {
-            pba->w_free_function_interpolation_is_linear = _TRUE_;
-          }
-          else {
-            if ((strstr(string1,"n") != NULL) || (strstr(string1,"N") != NULL)) {
-              pba->w_free_function_interpolation_is_linear = _FALSE_;
-            }
-            else {
-              class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_interpolation_is_linear'",string1);
-            }
-          }
-        }
-
-        class_read_double("w_free_function_logz_interpolation_above_z",pba->w_free_function_logz_interpolation_above_z);
-        pba->w_free_function_table_is_log = _FALSE_;
-        class_read_list_of_doubles_or_default("w_free_function_redshift_at_knot",pba->w_free_function_redshift_at_knot,0.0,pba->w_free_function_number_of_knots);
-        class_read_list_of_doubles_or_default("w_free_function_value_at_knot",pba->w_free_function_value_at_knot,0.0,pba->w_free_function_number_of_knots);
-        pba->w_free_function_number_of_columns = 4;//[0,1,2,3]=[1,dw,ddw,dddw];
-        class_alloc(pba->w_free_function_at_knot,sizeof(double)*pba->w_free_function_number_of_columns*pba->w_free_function_number_of_knots,pba->error_message);
-        for(i=0;i<pba->w_free_function_number_of_knots;i++){
-          pba->w_free_function_at_knot[i*pba->w_free_function_number_of_columns]=pba->w_free_function_value_at_knot[i];
-          for(n = 1; n < pba->w_free_function_number_of_columns ; n++)pba->w_free_function_at_knot[i*pba->w_free_function_number_of_columns+n]=0.;
-          // printf("%e %e %d\n", pba->w_free_function_at_knot[i*pba->w_free_function_number_of_columns],pba->w_free_function_redshift_at_knot[i],pba->w_free_function_number_of_knots);
-        }
-        // class_read_list_of_doubles_or_default_fill_column("w_free_function_density_at_knot",pba->w_free_function_at_knot,tmp_w_free_function,0,0.0,pba->w_free_function_number_of_knots,4); //the factor 4 stands for rho,drho,ddrho,dddrho
-        if(pba->w_free_function_interpolation_is_linear == _FALSE_)class_alloc(pba->w_free_function_dd_at_knot,sizeof(double)*pba->w_free_function_number_of_columns*pba->w_free_function_number_of_knots,pba->error_message);
-
-  }
   /** - Omega_0_k (effective fractional density of curvature) */
   class_read_double("Omega_k",pba->Omega0_k);
   /** - Set curvature parameter K */
@@ -1081,8 +1016,75 @@ int input_read_parameters(
                       errmsg);
             pba->Omega0_fld = param2/(1-param2)*pba->Omega0_cdm;
             pba->n_fld = 1;
+            Omega_tot += pba->Omega0_fld; //will be added later if Omega_fld is defined
+
           }
-          // Omega_tot += pba->Omega0_fld; //will be added later if Omega_fld is defined
+
+            class_call(parser_read_string(pfc,
+                                          "w_free_function_from_file",
+                                          &(string1),
+                                          &(flag1),
+                                          errmsg),
+                       errmsg,
+                       errmsg);
+
+            if (flag1 == _TRUE_) {
+              if ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)) {
+                pba->w_free_function_from_file = _TRUE_;
+              }
+              else {
+                if ((strstr(string1,"n") != NULL) || (strstr(string1,"N") != NULL)) {
+                  pba->w_free_function_from_file = _FALSE_;
+                }
+                else {
+                  class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_from_file'",string1);
+                }
+              }
+            }
+            class_read_string("w_free_function_file",ppr->w_free_function_file);
+
+            class_read_double("w_free_function_number_of_knots",pba->w_free_function_number_of_knots);
+            double *tmp_w_free_function;
+            if(pba->w_free_function_number_of_knots > 0){
+
+
+                  class_call(parser_read_string(pfc,
+                                                "w_free_function_interpolation_is_linear",
+                                                &(string1),
+                                                &(flag1),
+                                                errmsg),
+                             errmsg,
+                             errmsg);
+
+                  if (flag1 == _TRUE_) {
+                    if ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)) {
+                      pba->w_free_function_interpolation_is_linear = _TRUE_;
+                    }
+                    else {
+                      if ((strstr(string1,"n") != NULL) || (strstr(string1,"N") != NULL)) {
+                        pba->w_free_function_interpolation_is_linear = _FALSE_;
+                      }
+                      else {
+                        class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_interpolation_is_linear'",string1);
+                      }
+                    }
+                  }
+
+                  class_read_double("w_free_function_logz_interpolation_above_z",pba->w_free_function_logz_interpolation_above_z);
+                  pba->w_free_function_table_is_log = _FALSE_;
+                  class_read_list_of_doubles_or_default("w_free_function_redshift_at_knot",pba->w_free_function_redshift_at_knot,0.0,pba->w_free_function_number_of_knots);
+                  class_read_list_of_doubles_or_default("w_free_function_value_at_knot",pba->w_free_function_value_at_knot,0.0,pba->w_free_function_number_of_knots);
+                  pba->w_free_function_number_of_columns = 4;//[0,1,2,3]=[1,dw,ddw,dddw];
+                  class_alloc(pba->w_free_function_at_knot,sizeof(double)*pba->w_free_function_number_of_columns*pba->w_free_function_number_of_knots,pba->error_message);
+                  for(i=0;i<pba->w_free_function_number_of_knots;i++){
+                    pba->w_free_function_at_knot[i*pba->w_free_function_number_of_columns]=pba->w_free_function_value_at_knot[i];
+                    for(n = 1; n < pba->w_free_function_number_of_columns ; n++)pba->w_free_function_at_knot[i*pba->w_free_function_number_of_columns+n]=0.;
+                    // printf("%e %e %d\n", pba->w_free_function_at_knot[i*pba->w_free_function_number_of_columns],pba->w_free_function_redshift_at_knot[i],pba->w_free_function_number_of_knots);
+                  }
+                  // class_read_list_of_doubles_or_default_fill_column("w_free_function_density_at_knot",pba->w_free_function_at_knot,tmp_w_free_function,0,0.0,pba->w_free_function_number_of_knots,4); //the factor 4 stands for rho,drho,ddrho,dddrho
+                  if(pba->w_free_function_interpolation_is_linear == _FALSE_)class_alloc(pba->w_free_function_dd_at_knot,sizeof(double)*pba->w_free_function_number_of_columns*pba->w_free_function_number_of_knots,pba->error_message);
+
+            }
        }
        else if((strstr(string1,"pheno_axion") != NULL)) {
          pba->w_fld_parametrization = pheno_axion;
@@ -2898,8 +2900,24 @@ int input_read_parameters(
 
   /** - (h.3.) parameters related to the perturbations */
 
-  class_read_int("evolver",ppr->evolver);
+  class_call(parser_read_string(pfc,"evolver",&string1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+  if(flag1==_TRUE_){
+         flag2=_FALSE_;
+         if (strcmp(string1,"rk") == 0) {
+           ppr->evolver=rk;
+           flag2=_TRUE_;
+         }
+         if (strcmp(string1,"ndf15") == 0) {
+           ppr->evolver=ndf15;
+           flag2=_TRUE_;
+         }
 
+         class_test(flag2==_FALSE_,
+                    errmsg,
+                    "could not identify evolver value, check that it is one of 'rk','ndf15'.");
+       }
   class_read_double("k_scalar_min_tau0",ppr->k_min_tau0); // obsolete precision parameter: read for compatibility with old precision files
   class_read_double("k_scalar_max_tau0_over_l_max",ppr->k_max_tau0_over_l_max); // obsolete precision parameter: read for compatibility with old precision files
   class_read_double("k_scalar_step_sub",ppr->k_step_sub); // obsolete precision parameter: read for compatibility with old precision files

@@ -416,6 +416,7 @@ int background_functions(
       /* get w_fld from dedicated function */
       class_call(background_w_fld(pba,a,&w_fld,&dw_over_da,&integral_fld,n), pba->error_message, pba->error_message);
       pvecback[pba->index_bg_w_fld+n] = w_fld;
+      pvecback[pba->index_bg_dw_fld+n] = dw_over_da/(1+w_fld);
       // printf("a %e w_fld %e \n",a,w_fld);
       // Obsolete: at the beginning, we had here the analytic integral solution corresponding to the case w=w0+w1(1-a/a0):
       // pvecback[pba->index_bg_rho_fld] = pba->Omega0_fld * pow(pba->H0,2) / pow(a_rel,3.*(1.+pba->w0_fld+pba->wa_fld)) * exp(3.*pba->wa_fld*(a_rel-1.));
@@ -555,7 +556,7 @@ int background_w_fld(
   else if(pba->w_fld_parametrization == w_free_function){
     if(pba->w_free_function_from_file == _TRUE_)interpolate_w_free_function_from_file_at_a(pba,a_rel,&w,&dw);
     else interpolate_w_free_function_at_a(pba,a_rel,&w,&dw);
-    *w_fld = w;
+    *w_fld = w+1e-10;
     *dw_over_da_fld = dw;
     *integral_fld=0; //will be computed later in background_init once and for all;
   }
@@ -1332,6 +1333,7 @@ int background_indices(
   /* - index for fluid */
   class_define_index(pba->index_bg_rho_fld,pba->has_fld,index_bg,pba->n_fld);
   class_define_index(pba->index_bg_w_fld,pba->has_fld,index_bg,pba->n_fld);
+  class_define_index(pba->index_bg_dw_fld,pba->has_fld,index_bg,pba->n_fld);
 
   /* - index for ultra-relativistic neutrinos/species */
   class_define_index(pba->index_bg_rho_ur,pba->has_ur,index_bg,1);
@@ -2554,6 +2556,8 @@ int background_output_titles(struct background * pba,
       class_store_columntitle(titles,tmp,_TRUE_);
       sprintf(tmp,"(.)w_fld[%d]",n);
       class_store_columntitle(titles,tmp,_TRUE_);
+      sprintf(tmp,"(.)dw_fld[%d]",n);
+      class_store_columntitle(titles,tmp,_TRUE_);
     }
   }
   class_store_columntitle(titles,"(.)rho_ur",pba->has_ur);
@@ -2615,6 +2619,7 @@ int background_output_data(
       for (n=0; n<pba->n_fld; n++){
         class_store_double(dataptr,pvecback[pba->index_bg_rho_fld+n],pba->has_fld,storeidx);
         class_store_double(dataptr,pvecback[pba->index_bg_w_fld+n],pba->has_fld,storeidx);
+        class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n],pba->has_fld,storeidx);
       }
     }
 
