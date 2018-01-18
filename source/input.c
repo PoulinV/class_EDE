@@ -1006,6 +1006,7 @@ int input_read_parameters(
 
      if (flag1 == _TRUE_) {
        if((strstr(string1,"w_free_function") != NULL)) {
+         pba->n_fld = 1;
          pba->w_fld_parametrization = w_free_function;
          class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
                     errmsg,
@@ -1015,33 +1016,33 @@ int input_read_parameters(
                       errmsg,
                       errmsg);
             pba->Omega0_fld = param2/(1-param2)*pba->Omega0_cdm;
-            pba->n_fld = 1;
             Omega_tot += pba->Omega0_fld; //will be added later if Omega_fld is defined
-
+            class_test(flag2==_FALSE_,"you either forgot to give Omega_fld or passed Omega_many_fld with w_fld_parametrization = w_free_function. This option is not yet available. Please enter Omega_fld or fraction_axion.",errmsg);
           }
+
 
             class_call(parser_read_string(pfc,
                                           "w_free_function_from_file",
-                                          &(string1),
-                                          &(flag1),
+                                          &(string2),
+                                          &(flag2),
                                           errmsg),
                        errmsg,
                        errmsg);
 
-            if (flag1 == _TRUE_) {
-              if ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)) {
+            if (flag2 == _TRUE_) {
+              if ((strstr(string2,"y") != NULL) || (strstr(string2,"Y") != NULL)) {
                 pba->w_free_function_from_file = _TRUE_;
+                class_read_string("w_free_function_file",ppr->w_free_function_file);
               }
               else {
-                if ((strstr(string1,"n") != NULL) || (strstr(string1,"N") != NULL)) {
+                if ((strstr(string2,"n") != NULL) || (strstr(string2,"N") != NULL)) {
                   pba->w_free_function_from_file = _FALSE_;
                 }
                 else {
-                  class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_from_file'",string1);
+                  class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_from_file'",string2);
                 }
               }
             }
-            class_read_string("w_free_function_file",ppr->w_free_function_file);
 
             class_read_double("w_free_function_number_of_knots",pba->w_free_function_number_of_knots);
             double *tmp_w_free_function;
@@ -1050,22 +1051,22 @@ int input_read_parameters(
 
                   class_call(parser_read_string(pfc,
                                                 "w_free_function_interpolation_is_linear",
-                                                &(string1),
-                                                &(flag1),
+                                                &(string2),
+                                                &(flag2),
                                                 errmsg),
                              errmsg,
                              errmsg);
 
-                  if (flag1 == _TRUE_) {
-                    if ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)) {
+                  if (flag2 == _TRUE_) {
+                    if ((strstr(string2,"y") != NULL) || (strstr(string2,"Y") != NULL)) {
                       pba->w_free_function_interpolation_is_linear = _TRUE_;
                     }
                     else {
-                      if ((strstr(string1,"n") != NULL) || (strstr(string1,"N") != NULL)) {
+                      if ((strstr(string2,"n") != NULL) || (strstr(string2,"N") != NULL)) {
                         pba->w_free_function_interpolation_is_linear = _FALSE_;
                       }
                       else {
-                        class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_interpolation_is_linear'",string1);
+                        class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_interpolation_is_linear'",string2);
                       }
                     }
                   }
@@ -1092,39 +1093,35 @@ int input_read_parameters(
                     errmsg,
                     errmsg);
          if(flag2==_FALSE_){
+                 class_call(parser_read_list_of_doubles(pfc,
+                                                        "Omega_many_fld",
+                                                        &(pba->n_fld),
+                                                        &(pba->Omega_many_fld),
+                                                        &flag2,
+                                                        errmsg),
+                            errmsg,errmsg);
+                class_call(parser_read_list_of_doubles(pfc,
+                                                       "fraction_axion",
+                                                       &(pba->n_fld),
+                                                       &(pba->Omega_many_fld),
+                                                       &flag3,
+                                                       errmsg),
+                           errmsg,errmsg);
 
-
-
-
-           class_call(parser_read_list_of_doubles(pfc,
-                                                  "Omega_many_fld",
-                                                  &(pba->n_fld),
-                                                  &(pba->Omega_many_fld),
-                                                  &flag2,
-                                                  errmsg),
-                      errmsg,errmsg);
-          class_call(parser_read_list_of_doubles(pfc,
-                                                 "fraction_axion",
-                                                 &(pba->n_fld),
-                                                 &(pba->Omega_many_fld),
-                                                 &flag3,
-                                                 errmsg),
-                     errmsg,errmsg);
-
-            if(flag2!=_FALSE_ || flag3!=_FALSE_){
-              class_test(flag2==_TRUE_&&flag3==_TRUE_,"you have passed both 'Omega_many_fld' and 'fraction_axion'. Please pass only one of them.",errmsg,errmsg);
-              for(n = 0; n < pba->n_fld; n++){
-                if(flag3==_TRUE_){
-                  pba->Omega_many_fld[n] = pba->Omega0_cdm*pba->Omega_many_fld[n]/(1-pba->Omega_many_fld[n]);
-                }
-                Omega_tot += pba->Omega_many_fld[n];
-                // printf("pba->Omega_many_fld[n] %e pba->Omega0_cdm %e\n", pba->Omega_many_fld[n],pba->Omega0_cdm);
-              }
-            }
-            else if(flag2==_FALSE_&&flag3==_FALSE_){
-              class_stop(errmsg,"you have w_fld_parametrization defined but you forgot to give a value to Omega_fld, Omega_many_fld or fraction_axion. Please adapt you input file.")
-            }
-            }
+                  if(flag2!=_FALSE_ || flag3!=_FALSE_){
+                    class_test(flag2==_TRUE_&&flag3==_TRUE_,"you have passed both 'Omega_many_fld' and 'fraction_axion'. Please pass only one of them.",errmsg,errmsg);
+                    for(n = 0; n < pba->n_fld; n++){
+                      if(flag3==_TRUE_){
+                        pba->Omega_many_fld[n] = pba->Omega0_cdm*pba->Omega_many_fld[n]/(1-pba->Omega_many_fld[n]);
+                      }
+                      Omega_tot += pba->Omega_many_fld[n];
+                      printf("pba->Omega_many_fld[n] %e pba->Omega0_cdm %e\n", pba->Omega_many_fld[n],pba->Omega0_cdm);
+                    }
+                  }
+                  else if(flag2==_FALSE_&&flag3==_FALSE_){
+                    class_stop(errmsg,"you have w_fld_parametrization defined but you forgot to give a value to Omega_fld, Omega_many_fld or fraction_axion. Please adapt you input file.")
+                  }
+                  }
             else{
               pba->n_fld = 1;
             }
@@ -1136,7 +1133,7 @@ int input_read_parameters(
                                                      &flag2,
                                                      errmsg),
                          errmsg,errmsg);
-              class_test(int1!=pba->n_fld,"Careful: the list of 'a_c' isn't equal to the list of 'Omega_many_fld'!",errmsg,errmsg);
+              class_test(int1!=pba->n_fld,"Careful: the size of the list of 'a_c' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
               class_call(parser_read_list_of_doubles(pfc,
                                                      "n_pheno_axion",
                                                      &int1,
@@ -1144,7 +1141,7 @@ int input_read_parameters(
                                                      &flag2,
                                                      errmsg),
                          errmsg,errmsg);
-               class_test(int1!=pba->n_fld,"Careful: the list of 'n_pheno_axion' isn't equal to the list of 'Omega_many_fld'!",errmsg,errmsg);
+               class_test(int1!=pba->n_fld,"Careful: the size of the list of 'n_pheno_axion' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
             }
        }
        else if((strstr(string1,"pheno_alternative") != NULL)) {

@@ -5804,7 +5804,7 @@ int perturb_total_stress_energy(
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
         w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
         // if(w_fld==-1) w_fld += 0.3;
-        if(w_fld != -1 && pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+        if(pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w) in the file
         else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
         // else ca2 = w_fld;
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
@@ -6748,11 +6748,13 @@ int perturb_print_variables(double tau,
       }
     if(pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_){
       if (pba->has_fld == _TRUE_ && pba->use_ppf == _FALSE_) {
+        for(n = 0; n<pba->n_fld; n++){
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
           w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
           // if(w_fld==-1) w_fld += 0.3;
-          if(w_fld != -1 && pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+          if(pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
           else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+
           // else ca2 = w_fld;
           if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
             // cs2=pba->cs2_fld;
@@ -6760,8 +6762,6 @@ int perturb_print_variables(double tau,
             cs2=fabs(w_fld);
           }
           else cs2 = pba->cs2_fld;
-
-          for(n = 0; n<pba->n_fld; n++){
             delta_fld[n] = y[ppw->pv->index_pt_delta_fld+n];
             if(ppt->use_big_theta_fld == _TRUE_) {
               big_theta_fld[n] = y[ppw->pv->index_pt_big_theta_fld+n];
@@ -6771,6 +6771,7 @@ int perturb_print_variables(double tau,
               theta_fld[n] = y[ppw->pv->index_pt_theta_fld+n];
               delta_p_over_rho_fld[n] = cs2*delta_fld[n]+3*a_prime_over_a*(1+w_fld)*(cs2-ca2)*theta_fld[n]/k2;
             }
+
           }
         }
       if (pba->has_fld == _TRUE_ && pba->use_ppf == _TRUE_) {
@@ -6937,10 +6938,10 @@ int perturb_print_variables(double tau,
 
       if (pba->has_fld == _TRUE_  && pba->use_ppf == _FALSE_ && pba->fld_has_perturbations == _TRUE_){
         for(n = 0; n<pba->n_fld; n++){
-          class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
+          class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,pba->n_fld), pba->error_message, ppt->error_message);
           w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
           // if(w_fld==-1) w_fld += 0.3;
-          if(w_fld != -1 && pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+          if(pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
           else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
           // else ca2 = w_fld;
           if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
@@ -7751,18 +7752,6 @@ int perturb_derivs(double tau,
           cs2=fabs(w_fld);
         }
         else cs2 = pba->cs2_fld;
-        // if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
-        //   // center = 1/pba->a_c[n]-1;
-        //   // z = 1/a-1;
-        //   // width = center*0.01;//found to work well at capturing the sharp transition
-        //   // cs2before = cs2;
-        //   // cs2after = w_fld;
-        //   // cs2 = (cs2before - cs2after)*(tanh((z - center)/width) + 1)/2 + cs2after;
-        //   // // printf("z %e cs2 %e ca2 %e \n",z, cs2, ca2);
-        //   if(cs2 !=0 && a > 3*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
-        // }
-        // printf("a %e cs2 %e ca2 %e w_fld %e w_prime_fld %e \n", a,cs2,ca2,w_fld,w_prime_fld);
-
         /** - ----> fluid density */
         dy[pv->index_pt_delta_fld+n] = -3.*(cs2-w_fld)*a_prime_over_a*y[pv->index_pt_delta_fld+n];
 
