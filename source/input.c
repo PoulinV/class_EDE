@@ -517,7 +517,7 @@ int input_read_parameters(
   int flag1,flag2,flag3;
   double param1,param2,param3;
   int N_ncdm=0,n,entries_read;
-  int int1,fileentries;
+  int int1,int2,int3,fileentries;
   double scf_lambda;
   double fnu_factor;
   double * pointer1;
@@ -1005,6 +1005,7 @@ int input_read_parameters(
 
 
      if (flag1 == _TRUE_) {
+
        if((strstr(string1,"w_free_function") != NULL)) {
          pba->n_fld = 1;
          pba->w_fld_parametrization = w_free_function;
@@ -1012,12 +1013,13 @@ int input_read_parameters(
                     errmsg,
                     errmsg);
          if(flag2==_FALSE_){
-           class_call(parser_read_double(pfc,"fraction_axion",&param2,&flag2,errmsg),
+           class_call(parser_read_double(pfc,"fraction_axion",&param3,&flag3,errmsg),
                       errmsg,
                       errmsg);
-            pba->Omega0_fld = param2/(1-param2)*pba->Omega0_cdm;
+
+            class_test(flag3==_FALSE_,errmsg,"you either forgot to give Omega_fld or passed Omega_many_fld with w_fld_parametrization = w_free_function. This option is not yet available. Please enter Omega_fld or fraction_axion.");
+            pba->Omega0_fld = param3/(1-param3)*pba->Omega0_cdm;
             Omega_tot += pba->Omega0_fld; //will be added later if Omega_fld is defined
-            class_test(flag2==_FALSE_,"you either forgot to give Omega_fld or passed Omega_many_fld with w_fld_parametrization = w_free_function. This option is not yet available. Please enter Omega_fld or fraction_axion.",errmsg);
           }
 
 
@@ -1095,14 +1097,14 @@ int input_read_parameters(
          if(flag2==_FALSE_){
                  class_call(parser_read_list_of_doubles(pfc,
                                                         "Omega_many_fld",
-                                                        &(pba->n_fld),
+                                                        &int2,
                                                         &(pba->Omega_many_fld),
                                                         &flag2,
                                                         errmsg),
                             errmsg,errmsg);
                 class_call(parser_read_list_of_doubles(pfc,
                                                        "fraction_axion",
-                                                       &(pba->n_fld),
+                                                       &int3,
                                                        &(pba->Omega_many_fld),
                                                        &flag3,
                                                        errmsg),
@@ -1110,6 +1112,8 @@ int input_read_parameters(
 
                   if(flag2!=_FALSE_ || flag3!=_FALSE_){
                     class_test(flag2==_TRUE_&&flag3==_TRUE_,"you have passed both 'Omega_many_fld' and 'fraction_axion'. Please pass only one of them.",errmsg,errmsg);
+                    if(flag2==_TRUE_)pba->n_fld = int2;
+                    if(flag3==_TRUE_)pba->n_fld = int3;
                     for(n = 0; n < pba->n_fld; n++){
                       if(flag3==_TRUE_){
                         pba->Omega_many_fld[n] = pba->Omega0_cdm*pba->Omega_many_fld[n]/(1-pba->Omega_many_fld[n]);
