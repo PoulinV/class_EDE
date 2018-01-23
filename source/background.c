@@ -2556,7 +2556,7 @@ int background_output_titles(struct background * pba,
       class_store_columntitle(titles,tmp,_TRUE_);
       sprintf(tmp,"(.)w_fld[%d]",n);
       class_store_columntitle(titles,tmp,_TRUE_);
-      sprintf(tmp,"(.)dw_fld[%d]",n);
+      sprintf(tmp,"(.)dw_over_w_fld[%d]",n);
       class_store_columntitle(titles,tmp,_TRUE_);
     }
   }
@@ -2619,7 +2619,12 @@ int background_output_data(
       for (n=0; n<pba->n_fld; n++){
         class_store_double(dataptr,pvecback[pba->index_bg_rho_fld+n],pba->has_fld,storeidx);
         class_store_double(dataptr,pvecback[pba->index_bg_w_fld+n],pba->has_fld,storeidx);
-        class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n],pba->has_fld,storeidx);
+        if(pba->w_free_function_from_file == _TRUE_){
+          class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n],pba->has_fld,storeidx);
+        }
+        else {
+          class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n]/(1+pvecback[pba->index_bg_w_fld+n]),pba->has_fld,storeidx);
+        }
       }
     }
 
