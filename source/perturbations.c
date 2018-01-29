@@ -5805,7 +5805,7 @@ int perturb_total_stress_energy(
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
         w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
         // if(w_fld==-1) w_fld += 0.3;
-        if(pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w) in the file
+        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w) in the file
         else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
         // else ca2 = w_fld;
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
@@ -6753,7 +6753,7 @@ int perturb_print_variables(double tau,
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
           w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
           // if(w_fld==-1) w_fld += 0.3;
-          if(pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+          if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
           else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
 
           // else ca2 = w_fld;
@@ -6942,7 +6942,7 @@ int perturb_print_variables(double tau,
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,pba->n_fld), pba->error_message, ppt->error_message);
           w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
           // if(w_fld==-1) w_fld += 0.3;
-          if(pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+          if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
           else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
           // else ca2 = w_fld;
           if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
@@ -7744,7 +7744,7 @@ int perturb_derivs(double tau,
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
         w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
         // if(w_fld==-1) w_fld += 0.3;
-        if(w_fld != -1 && pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
         else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
         // else ca2 = w_fld;
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
@@ -7780,7 +7780,7 @@ int perturb_derivs(double tau,
           -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
           +cs2*k2*y[pv->index_pt_delta_fld+n]
           +(1+w_fld)*metric_euler;
-        if(pba->w_fld_parametrization == w_free_function && pba->w_free_function_from_file == _TRUE_){
+        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
           dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld;//in reality w_prime_fld is w_prime_fld/(1+w_fld), more stable
         }
         else {

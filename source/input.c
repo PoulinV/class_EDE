@@ -1045,6 +1045,27 @@ int input_read_parameters(
                 }
               }
             }
+            class_call(parser_read_string(pfc,
+                                          "w_free_function_file_is_dw_over_1_p_w",
+                                          &(string2),
+                                          &(flag2),
+                                          errmsg),
+                       errmsg,
+                       errmsg);
+
+            if (flag2 == _TRUE_) {
+              if ((strstr(string2,"y") != NULL) || (strstr(string2,"Y") != NULL)) {
+                pba->w_free_function_file_is_dw_over_1_p_w = _TRUE_;
+              }
+              else {
+                if ((strstr(string2,"n") != NULL) || (strstr(string2,"N") != NULL)) {
+                  pba->w_free_function_file_is_dw_over_1_p_w = _FALSE_;
+                }
+                else {
+                  class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_file_is_dw_over_1_p_w'",string2);
+                }
+              }
+            }
 
             class_read_double("w_free_function_number_of_knots",pba->w_free_function_number_of_knots);
             double *tmp_w_free_function;
@@ -3287,6 +3308,7 @@ int input_default_params(
   pba->cs2_fld=1.;
   ppt->cs2_is_w = _FALSE_;
   pba->w_fld_parametrization = CPL;
+  pba->w_free_function_file_is_dw_over_1_p_w = _FALSE_;
   pba->a_c = NULL;
   pba->Omega_many_fld = NULL;
   pba->n_fld = 0;
