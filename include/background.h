@@ -106,6 +106,7 @@ struct background
   double * w_free_function_ddd_at_knot;
   short w_free_function_table_is_log;
   short w_free_function_from_file;
+  short w_free_function_file_is_dw_over_1_p_w;
   double w_free_function_logz_interpolation_above_z;
   short w_free_function_interpolation_is_linear;
   // double * w_free_function_dd_density_at_knot;
