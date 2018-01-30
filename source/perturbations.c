@@ -4360,9 +4360,8 @@ int perturb_initial_conditions(struct precision * ppr,
           if (pba->use_ppf == _FALSE_) {
             // if(w_fld==-1)w_fld+=0.3;
             if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
-              // cs2=pba->cs2_fld;
-              // if(a>pba->a_c[n])cs2=fabs(w_fld);
-              cs2=fabs(w_fld);
+              // cs2=fabs(w_fld);
+              cs2 = k*k/(4*pow(pba->m_fld[n],2)*a*a)/(1+k*k/(4*pow(pba->m_fld[n],2)*a*a));
             }
             else cs2 = pba->cs2_fld;
             // if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
@@ -5809,9 +5808,9 @@ int perturb_total_stress_energy(
         else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
         // else ca2 = w_fld;
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
-          // cs2=pba->cs2_fld;
-          // if(a> pba->a_c[n])cs2=fabs(w_fld);
-          cs2=fabs(w_fld);
+          // cs2=fabs(w_fld);
+          cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
+
         }
         else cs2 = pba->cs2_fld;
         if (pba->use_ppf == _FALSE_) {
@@ -5850,9 +5849,9 @@ int perturb_total_stress_energy(
         ppw->delta_rho += ppw->delta_rho_fld[n];
         ppw->rho_plus_p_theta += ppw->rho_plus_p_theta_fld[n];
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
-          // cs2=pba->cs2_fld;
-          // if(a>pba->a_c[n])cs2=fabs(w_fld);
-          cs2=fabs(w_fld);
+          // cs2=fabs(w_fld);
+          cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
+
         }
         else cs2=pba->cs2_fld;
 
@@ -6758,9 +6757,8 @@ int perturb_print_variables(double tau,
 
           // else ca2 = w_fld;
           if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
-            // cs2=pba->cs2_fld;
-            // if(a> pba->a_c[n])cs2=fabs(w_fld);
-            cs2=fabs(w_fld);
+            // cs2=fabs(w_fld);
+            cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
           }
           else cs2 = pba->cs2_fld;
             delta_fld[n] = y[ppw->pv->index_pt_delta_fld+n];
@@ -6946,9 +6944,8 @@ int perturb_print_variables(double tau,
           else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
           // else ca2 = w_fld;
           if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
-            // cs2=pba->cs2_fld;
-            // if(a> pba->a_c[n])cs2=fabs(w_fld);
-            cs2=fabs(w_fld);
+            // cs2=fabs(w_fld);
+            cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
           }
           else cs2 = pba->cs2_fld;
 
@@ -7748,9 +7745,8 @@ int perturb_derivs(double tau,
         else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
         // else ca2 = w_fld;
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
-          // cs2=pba->cs2_fld;
-          // if(a> pba->a_c[n])cs2=fabs(w_fld);
-          cs2=fabs(w_fld);
+          // cs2=fabs(w_fld);
+          cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
         }
         else cs2 = pba->cs2_fld;
         /** - ----> fluid density */
@@ -7784,6 +7780,7 @@ int perturb_derivs(double tau,
           dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld;//in reality w_prime_fld is w_prime_fld/(1+w_fld), more stable
         }
         else {
+          if(w_prime_fld/(1+w_fld)>1e4)w_prime_fld=0;
           dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld/(1+w_fld);
         }
         // printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);

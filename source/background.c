@@ -134,7 +134,6 @@ int background_at_tau(
       pvecback_size=pba->bg_size;
     }
   }
-
   /** - interpolate from pre-computed table with array_interpolate()
       or array_interpolate_growing_closeby() (depending on
       interpolation mode) */
@@ -989,6 +988,14 @@ int background_init(
   double Neff;
   double w_fld, dw_over_da, integral_fld;
   int filenum=0;
+  /* vector of all background quantities */
+  double * pvecback;
+  /* necessary for calling array_interpolate(), but never used */
+  int last_index=0;
+  /* parameters required to get m_fld when playing with axion */
+  double tau_of_ac;
+  int n;
+
 
   /** - in verbose mode, provide some information */
   if (pba->background_verbose > 0) {
@@ -1093,6 +1100,8 @@ int background_init(
                pba->error_message,
                "Your choice for w(a--->0)=%g is suspicious, since it is bigger than -1/3 there cannot be radiation domination at early times\n",
                w_fld);
+
+
   }
 
   /* in verbose mode, inform the user about the value of the ncdm
@@ -1121,6 +1130,32 @@ int background_init(
   class_call(background_solve(ppr,pba),
              pba->error_message,
              pba->error_message);
+
+   if(pba->w_fld_parametrization == pheno_axion){
+     class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
+
+     /* check the time corresponding to the highest redshift requested in output plus one */
+     for(n =0 ;n<pba->n_fld;n++){
+       class_call(background_tau_of_z(pba,
+                                      1/pba->a_c[n]-1,
+                                      &tau_of_ac),
+                  pba->error_message,
+                  pba->error_message);
+       printf("tau %e zc %e\n",tau_of_ac,1/pba->a_c[n]-1);
+       class_call(background_at_tau(pba,
+                                    tau_of_ac,
+                                    pba->short_info,
+                                    pba->inter_normal,
+                                    &last_index,
+                                    pvecback),
+                  pba->error_message,
+                  pba->error_message);
+       pba->m_fld[n] = 3*pvecback[pba->index_bg_H];
+       printf("pba->m_fld %e tau_of_ac %e\n", pba->m_fld[n],tau_of_ac);
+     }
+
+
+   }
 
   return _SUCCESS_;
 
@@ -2015,6 +2050,9 @@ int background_solve(
   int last_index=0;
   /* comoving radius coordinate in Mpc (equal to conformal distance in flat case) */
   double comoving_radius=0.;
+  /* parameters required to get m_fld when playing with axion */
+  double tau_of_ac;
+  int n;
 
   bpaw.pba = pba;
   class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
@@ -2240,6 +2278,8 @@ int background_solve(
                *pba->background_table[pba->index_bg_rho_crit]
                -pba->background_table[pba->index_bg_rho_g])
     /(7./8.*pow(4./11.,4./3.)*pba->background_table[pba->index_bg_rho_g]);
+
+
 
   /** - done */
   if (pba->background_verbose > 0) {
@@ -2619,7 +2659,7 @@ int background_output_data(
       for (n=0; n<pba->n_fld; n++){
         class_store_double(dataptr,pvecback[pba->index_bg_rho_fld+n],pba->has_fld,storeidx);
         class_store_double(dataptr,pvecback[pba->index_bg_w_fld+n],pba->has_fld,storeidx);
-        if(pba->w_free_function_from_file == _TRUE_){
+        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
           class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n],pba->has_fld,storeidx);
         }
         else {
