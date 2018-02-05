@@ -1066,6 +1066,34 @@ int input_read_parameters(
                 }
               }
             }
+            else {
+              pba->w_free_function_file_is_dw_over_1_p_w=_FALSE_;
+            }
+
+            class_call(parser_read_string(pfc,
+                                          "w_free_function_file_is_ca2",
+                                          &(string2),
+                                          &(flag2),
+                                          errmsg),
+                       errmsg,
+                       errmsg);
+
+            if (flag2 == _TRUE_) {
+              if ((strstr(string2,"y") != NULL) || (strstr(string2,"Y") != NULL)) {
+                pba->w_free_function_file_is_ca2 = _TRUE_;
+              }
+              else {
+                if ((strstr(string2,"n") != NULL) || (strstr(string2,"N") != NULL)) {
+                  pba->w_free_function_file_is_ca2 = _FALSE_;
+                }
+                else {
+                  class_stop(errmsg,"incomprehensible input '%s' for the field 'w_free_function_file_is_ca2'",string2);
+                }
+              }
+            }
+            else {
+              pba->w_free_function_file_is_ca2=_FALSE_;
+            }
 
             class_read_double("w_free_function_number_of_knots",pba->w_free_function_number_of_knots);
             double *tmp_w_free_function;
@@ -1159,6 +1187,8 @@ int input_read_parameters(
                                                      errmsg),
                          errmsg,errmsg);
               class_test(int1!=pba->n_fld,"Careful: the size of the list of 'a_c' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
+              class_alloc(pba->m_fld,sizeof(double)*pba->n_fld,pba->error_message);
+
               class_call(parser_read_list_of_doubles(pfc,
                                                      "n_pheno_axion",
                                                      &int1,
@@ -1218,6 +1248,8 @@ int input_read_parameters(
                                                        errmsg),
                            errmsg,errmsg);
                 class_test(int1!=pba->n_fld,"Careful: the list of 'a_c' isn't equal to the list of 'Omega_many_fld'!",errmsg,errmsg);
+                class_alloc(pba->m_fld,sizeof(double)*pba->n_fld,pba->error_message);
+
                 class_call(parser_read_list_of_doubles(pfc,
                                                        "n_pheno_axion",
                                                        &int1,
@@ -3310,6 +3342,7 @@ int input_default_params(
   pba->w_fld_parametrization = CPL;
   pba->w_free_function_file_is_dw_over_1_p_w = _FALSE_;
   pba->a_c = NULL;
+  pba->m_fld = NULL;
   pba->Omega_many_fld = NULL;
   pba->n_fld = 0;
   pba->n_pheno_axion = NULL;

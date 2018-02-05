@@ -4356,6 +4356,9 @@ int perturb_initial_conditions(struct precision * ppr,
           // printf("1./a -1  %e pba->w_free_function_logz_interpolation_above_z %e\n", 1./a -1 ,pba->w_free_function_logz_interpolation_above_z);
           // printf("in perturb initial conditions scalars %d\n", pba->w_free_function_table_is_log);
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
+          // if(pba->w_free_function_from_file == _TRUE_){
+          //   w_fld+=0.01;
+          // }
           // printf("1./a -1  %e w_fld %e\n", 1./a -1 ,w_fld);
           if (pba->use_ppf == _FALSE_) {
             // if(w_fld==-1)w_fld+=0.3;
@@ -4659,6 +4662,9 @@ int perturb_initial_conditions(struct precision * ppr,
         // printf("in perturb initial conditions newt%d\n", pba->w_free_function_table_is_log);
         for(n = 0; n < pba->n_fld; n++){
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
+          // if(pba->w_free_function_from_file == _TRUE_){
+          //   w_fld+=0.01;
+          // }
           ppw->pv->y[ppw->pv->index_pt_delta_fld+n] += 3*(1.+w_fld)*a_prime_over_a*alpha;
           if(ppt->use_big_theta_fld == _TRUE_) ppw->pv->y[ppw->pv->index_pt_big_theta_fld+n] += (1+w_fld)*k*k*alpha;
           else ppw->pv->y[ppw->pv->index_pt_theta_fld+n] += k*k*alpha;
@@ -5802,11 +5808,15 @@ int perturb_total_stress_energy(
 
         // printf("pba->w_free_function_table_is_log %d\n", pba->w_free_function_table_is_log);
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
+        // if(pba->w_free_function_from_file == _TRUE_){
+        //   w_fld+=0.01;
+        // }
         w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
         // if(w_fld==-1) w_fld += 0.3;
         if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w) in the file
-        else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
-        // else ca2 = w_fld;
+        else if(pba->w_free_function_file_is_ca2 == _TRUE_)ca2 = dw_over_da_fld; //we store already ca2 in the file
+        // else ca2 = MAX(MIN(w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a,1),-1);
+        else ca2 = w_fld;
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
           // cs2=fabs(w_fld);
           cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
@@ -5829,20 +5839,18 @@ int perturb_total_stress_energy(
         else {
           s2sq = ppw->s_l[2]*ppw->s_l[2];
           if (ppt->gauge == synchronous)
-            alpha = (y[ppw->pv->index_pt_eta]+1.5*a2/k2/s2sq*(ppw->delta_rho+a_prime_over_a/k2*ppw->rho_plus_p_theta)-y[ppw->pv->index_pt_Gamma_fld+n])/a_prime_over_a;
+            alpha = (y[ppw->pv->index_pt_eta]+1.5*a2/k2/s2sq*(ppw->delta_rho+a_prime_over_a/k2*ppw->rho_plus_p_theta)-y[ppw->pv->index_pt_Gamma_fld+n])/a_prime_over_a;//Need to be checked
           else
             alpha = 0.;
-          ppw->S_fld = ppw->pvecback[pba->index_bg_rho_fld+n]*(1.+w_fld)*1.5*a2/k2/a_prime_over_a*
-            (ppw->rho_plus_p_theta/rho_plus_p_tot+k2*alpha);
+          ppw->S_fld = ppw->pvecback[pba->index_bg_rho_fld+n]*(1.+w_fld)*1.5*a2/k2/a_prime_over_a*(ppw->rho_plus_p_theta/rho_plus_p_tot+k2*alpha);//Need to be checked
           // note that the last terms in the ratio do not include fld, that's correct, it's the whole point of the PPF scheme
-          c_gamma_k_H_square = pow(pba->c_gamma_over_c_fld*k/a_prime_over_a,2)*pba->cs2_fld;
+          c_gamma_k_H_square = pow(pba->c_gamma_over_c_fld*cs2*k/a_prime_over_a,2); //I believe that there was a mistake in original version: cs2 was outside the parenthesis.
           ppw->Gamma_prime_fld[n] = a_prime_over_a*(ppw->S_fld/(1.+c_gamma_k_H_square) - (1.+c_gamma_k_H_square)*y[ppw->pv->index_pt_Gamma_fld+n]);
           Gamma_prime_plus_a_prime_over_a_Gamma = ppw->Gamma_prime_fld[n]+a_prime_over_a*y[ppw->pv->index_pt_Gamma_fld+n];
           // delta and theta in both gauges gauge:
           ppw->rho_plus_p_theta_fld[n] = ppw->pvecback[pba->index_bg_rho_fld+n]*(1.+w_fld)*ppw->rho_plus_p_theta/rho_plus_p_tot-
-            k2*2./3.*a_prime_over_a/a2/(1+4.5*a2/k2/s2sq*rho_plus_p_tot)*
-            (ppw->S_fld-Gamma_prime_plus_a_prime_over_a_Gamma/a_prime_over_a);
-          ppw->delta_rho_fld[n] = -2./3.*k2*s2sq/a2*y[ppw->pv->index_pt_Gamma_fld+n]-3*a_prime_over_a/k2*ppw->rho_plus_p_theta_fld[n];
+            k2*2./3.*a_prime_over_a/a2/(1+4.5*a2/k2/s2sq*rho_plus_p_tot)*(ppw->S_fld-Gamma_prime_plus_a_prime_over_a_Gamma/a_prime_over_a);//Need to be checked
+          ppw->delta_rho_fld[n] = -2./3.*k2*s2sq/a2*y[ppw->pv->index_pt_Gamma_fld+n]-3*a_prime_over_a/k2*ppw->rho_plus_p_theta_fld[n];//Need to be checked
         }
         // printf("here n %d ppw->delta_rho_fld[n] %e ppw->rho_plus_p_theta_fld[n] %e \n", n, ppw->delta_rho_fld[n],ppw->rho_plus_p_theta_fld[n]);
 
@@ -6478,6 +6486,9 @@ int perturb_sources(
 
       for(n = 0; n<pba->n_fld; n++){
         class_call(background_w_fld(pba,a_rel*pba->a_today,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
+        // if(pba->w_free_function_from_file == _TRUE_){
+        //   w_fld+=0.01;
+        // }
         _set_source_(ppt->index_tp_theta_fld+n) = ppw->rho_plus_p_theta_fld[n]/(1.+w_fld)/pvecback[pba->index_bg_rho_fld+n];
       }
     }
@@ -6750,12 +6761,16 @@ int perturb_print_variables(double tau,
       if (pba->has_fld == _TRUE_ && pba->use_ppf == _FALSE_) {
         for(n = 0; n<pba->n_fld; n++){
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
+          // if(pba->w_free_function_from_file == _TRUE_){
+          //   w_fld+=0.01;
+          // }
           w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
           // if(w_fld==-1) w_fld += 0.3;
           if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
-          else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+          else if(pba->w_free_function_file_is_ca2 == _TRUE_)ca2 = dw_over_da_fld; //we store already ca2 in the file
+          // else ca2 = MAX(MIN(w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a,1),-1);
+          else ca2 = w_fld;
 
-          // else ca2 = w_fld;
           if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
             // cs2=fabs(w_fld);
             cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
@@ -6938,11 +6953,15 @@ int perturb_print_variables(double tau,
       if (pba->has_fld == _TRUE_  && pba->use_ppf == _FALSE_ && pba->fld_has_perturbations == _TRUE_){
         for(n = 0; n<pba->n_fld; n++){
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,pba->n_fld), pba->error_message, ppt->error_message);
+          // if(pba->w_free_function_from_file == _TRUE_){
+          //   w_fld+=0.01;
+          // }
           w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
           // if(w_fld==-1) w_fld += 0.3;
           if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
-          else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
-          // else ca2 = w_fld;
+          // else ca2 = MAX(MIN(w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a,1),-1);
+          else if(pba->w_free_function_file_is_ca2 == _TRUE_)ca2 = dw_over_da_fld; //we store already ca2 in the file
+          else ca2 = w_fld;
           if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
             // cs2=fabs(w_fld);
             cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
@@ -7739,16 +7758,26 @@ int perturb_derivs(double tau,
           // printf("in perturb derivs %d\n", pba->w_free_function_table_is_log);
 
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
+        // if(pba->w_free_function_from_file == _TRUE_){
+        //   w_fld+=0.00001;
+        // }
         w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
         // if(w_fld==-1) w_fld += 0.3;
         if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
-        else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+        else if(pba->w_free_function_file_is_ca2 == _TRUE_)ca2 = dw_over_da_fld; //we store already ca2 in the file
+        else ca2 = MAX(MIN(w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a,1),-1);
+
         // else ca2 = w_fld;
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
           // cs2=fabs(w_fld);
           cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
         }
         else cs2 = pba->cs2_fld;
+
+
+        // printf("k %e a %e 1+w %e dw %e dw/1+w %e cs2 %e ca2 %e\n",k,a,1+w_fld,w_prime_fld,w_prime_fld/(1+w_fld),cs2,ca2);
+
+
         /** - ----> fluid density */
         dy[pv->index_pt_delta_fld+n] = -3.*(cs2-w_fld)*a_prime_over_a*y[pv->index_pt_delta_fld+n];
 
@@ -7780,10 +7809,11 @@ int perturb_derivs(double tau,
           dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld;//in reality w_prime_fld is w_prime_fld/(1+w_fld), more stable
         }
         else {
-          if(w_prime_fld/(1+w_fld)>1e4)w_prime_fld=0;
+          // if(w_prime_fld/(1+w_fld)>0.1)w_prime_fld=0;
           dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld/(1+w_fld);
         }
         // printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
+       // printf("%d  w_fld %e wprime %e dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n",ppt->use_big_theta_fld, w_fld,w_prime_fld,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
       }
       else {
         dy[pv->index_pt_theta_fld+n] = /* fluid velocity */

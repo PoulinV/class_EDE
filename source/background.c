@@ -1150,7 +1150,9 @@ int background_init(
                                     pvecback),
                   pba->error_message,
                   pba->error_message);
-       pba->m_fld[n] = 3*pvecback[pba->index_bg_H];
+
+       class_call(background_w_fld(pba,pba->a_c[n],&w_fld,&dw_over_da,&integral_fld,0), pba->error_message, pba->error_message);
+       pba->m_fld[n] =sqrt(pow(2,1-pba->n_pheno_axion[n])*(2*pba->n_pheno_axion[n]-1)*9*(1+w_fld)*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_H]);
        printf("pba->m_fld %e tau_of_ac %e\n", pba->m_fld[n],tau_of_ac);
      }
 
