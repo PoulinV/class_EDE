@@ -2598,8 +2598,15 @@ int background_output_titles(struct background * pba,
       class_store_columntitle(titles,tmp,_TRUE_);
       sprintf(tmp,"(.)w_fld[%d]",n);
       class_store_columntitle(titles,tmp,_TRUE_);
-      sprintf(tmp,"(.)dw_over_w_fld[%d]",n);
-      class_store_columntitle(titles,tmp,_TRUE_);
+      if(pba->w_free_function_file_is_ca2 == _TRUE_){
+        sprintf(tmp,"(.)ca2_fld[%d]",n);
+        class_store_columntitle(titles,tmp,_TRUE_);
+      }
+        else{
+        sprintf(tmp,"(.)dw_over_w_fld[%d]",n);
+        class_store_columntitle(titles,tmp,_TRUE_);
+        }
+
     }
   }
   class_store_columntitle(titles,"(.)rho_ur",pba->has_ur);
@@ -2662,6 +2669,9 @@ int background_output_data(
         class_store_double(dataptr,pvecback[pba->index_bg_rho_fld+n],pba->has_fld,storeidx);
         class_store_double(dataptr,pvecback[pba->index_bg_w_fld+n],pba->has_fld,storeidx);
         if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
+          class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n],pba->has_fld,storeidx);
+        }
+        else if(pba->w_free_function_file_is_ca2 == _TRUE_){
           class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n],pba->has_fld,storeidx);
         }
         else {
