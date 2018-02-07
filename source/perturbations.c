@@ -5816,7 +5816,7 @@ int perturb_total_stress_energy(
           ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
         }
         else if(pba->w_free_function_file_is_ca2 == _TRUE_){
-          ca2 = MAX(MIN(dw_over_da_fld,10),-10); //we store already ca2 in the file
+          ca2 = dw_over_da_fld; //we store already ca2 in the file
           // ca2 = 0;
           // printf("a %e ca2 %e\n", a,ca2);
         }
@@ -6777,7 +6777,7 @@ int perturb_print_variables(double tau,
             ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
           }
           else if(pba->w_free_function_file_is_ca2 == _TRUE_){
-            ca2 = MAX(MIN(dw_over_da_fld,10),-10); //we store already ca2 in the file
+            ca2 = dw_over_da_fld; //we store already ca2 in the file
             // ca2 = 0;
             // printf("a %e ca2 %e\n", a,ca2);
           }
@@ -6977,7 +6977,7 @@ int perturb_print_variables(double tau,
             ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
           }
           else if(pba->w_free_function_file_is_ca2 == _TRUE_){
-            ca2 = MAX(MIN(dw_over_da_fld,10),-10); //we store already ca2 in the file
+            ca2 = dw_over_da_fld; //we store already ca2 in the file
             // ca2 = 0;
             // printf("a %e ca2 %e\n", a,ca2);
           }
@@ -7790,7 +7790,7 @@ int perturb_derivs(double tau,
           ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
         }
         else if(pba->w_free_function_file_is_ca2 == _TRUE_){
-          ca2 = MAX(MIN(dw_over_da_fld,10),-10); //we store already ca2 in the file
+          ca2 = dw_over_da_fld; //we store already ca2 in the file
           // ca2 = 0;
           // printf("a %e ca2 %e\n", a,ca2);
         }

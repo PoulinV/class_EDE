@@ -415,7 +415,7 @@ int background_functions(
       /* get w_fld from dedicated function */
       class_call(background_w_fld(pba,a,&w_fld,&dw_over_da,&integral_fld,n), pba->error_message, pba->error_message);
       pvecback[pba->index_bg_w_fld+n] = w_fld;
-      pvecback[pba->index_bg_dw_fld+n] = dw_over_da/(1+w_fld);
+      pvecback[pba->index_bg_dw_fld+n] = dw_over_da;
       // printf("a %e w_fld %e \n",a,w_fld);
       // Obsolete: at the beginning, we had here the analytic integral solution corresponding to the case w=w0+w1(1-a/a0):
       // pvecback[pba->index_bg_rho_fld] = pba->Omega0_fld * pow(pba->H0,2) / pow(a_rel,3.*(1.+pba->w0_fld+pba->wa_fld)) * exp(3.*pba->wa_fld*(a_rel-1.));
@@ -555,8 +555,13 @@ int background_w_fld(
   else if(pba->w_fld_parametrization == w_free_function){
     if(pba->w_free_function_from_file == _TRUE_)interpolate_w_free_function_from_file_at_a(pba,a_rel,&w,&dw);
     else interpolate_w_free_function_at_a(pba,a_rel,&w,&dw);
-    *w_fld = w+1e-10;
-    *dw_over_da_fld = dw;
+    *w_fld = w;
+    if(pba->w_free_function_file_is_ca2 == _TRUE_){
+      *dw_over_da_fld = MAX(MIN(dw,pba->ca2_max),-1*pba->ca2_max);
+    }
+    else{
+      *dw_over_da_fld = dw;
+    }
     *integral_fld=0; //will be computed later in background_init once and for all;
   }
   // printf("a_rel %e %e %e %e\n",a_rel,*w_fld,*dw_over_da_fld,*integral_fld);

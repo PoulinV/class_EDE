@@ -1095,6 +1095,9 @@ int input_read_parameters(
               pba->w_free_function_file_is_ca2=_FALSE_;
             }
 
+            class_read_double("ca2_max",pba->ca2_max);
+
+
             class_read_double("w_free_function_number_of_knots",pba->w_free_function_number_of_knots);
             double *tmp_w_free_function;
             if(pba->w_free_function_number_of_knots > 0){
@@ -3341,6 +3344,7 @@ int input_default_params(
   ppt->cs2_is_w = _FALSE_;
   pba->w_fld_parametrization = CPL;
   pba->w_free_function_file_is_dw_over_1_p_w = _FALSE_;
+  pba->ca2_max = 10;
   pba->a_c = NULL;
   pba->m_fld = NULL;
   pba->Omega_many_fld = NULL;
