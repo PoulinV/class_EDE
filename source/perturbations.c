@@ -5816,7 +5816,7 @@ int perturb_total_stress_energy(
         if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w) in the file
         else if(pba->w_free_function_file_is_ca2 == _TRUE_)ca2 = dw_over_da_fld; //we store already ca2 in the file
         // else ca2 = MAX(MIN(w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a,1),-1);
-        else ca2 = w_fld;
+        else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
           // cs2=fabs(w_fld);
           cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
@@ -6769,7 +6769,7 @@ int perturb_print_variables(double tau,
           if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
           else if(pba->w_free_function_file_is_ca2 == _TRUE_)ca2 = dw_over_da_fld; //we store already ca2 in the file
           // else ca2 = MAX(MIN(w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a,1),-1);
-          else ca2 = w_fld;
+          else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
 
           if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
             // cs2=fabs(w_fld);
@@ -7761,12 +7761,20 @@ int perturb_derivs(double tau,
         // if(pba->w_free_function_from_file == _TRUE_){
         //   w_fld+=0.00001;
         // }
-        w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
         // if(w_fld==-1) w_fld += 0.3;
-        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
-        else if(pba->w_free_function_file_is_ca2 == _TRUE_)ca2 = dw_over_da_fld; //we store already ca2 in the file
-        else ca2 = MAX(MIN(w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a,1),-1);
-
+        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
+          w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+          ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+        }
+        else if(pba->w_free_function_file_is_ca2 == _TRUE_){
+          ca2 = dw_over_da_fld; //we store already ca2 in the file
+          // ca2 = 0;
+          // printf("a %e ca2 %e\n", a,ca2);
+        }
+        else{
+          w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+          ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+        }
         // else ca2 = w_fld;
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
           // cs2=fabs(w_fld);
@@ -7800,18 +7808,24 @@ int perturb_derivs(double tau,
 
         /** - ----> fluid velocity */
       if(ppt->use_big_theta_fld == _TRUE_){
-        // printf("%e %e \n",a,w_prime_fld/(1+w_fld));
-        dy[pv->index_pt_big_theta_fld+n] = /* fluid velocity */
-          -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
-          +cs2*k2*y[pv->index_pt_delta_fld+n]
+        dy[pv->index_pt_big_theta_fld] = /* fluid velocity */
+          -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld]
+          +cs2*k2*y[pv->index_pt_delta_fld]
           +(1+w_fld)*metric_euler;
-        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
-          dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld;//in reality w_prime_fld is w_prime_fld/(1+w_fld), more stable
-        }
-        else {
-          // if(w_prime_fld/(1+w_fld)>0.1)w_prime_fld=0;
-          dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld/(1+w_fld);
-        }
+          dy[pv->index_pt_big_theta_fld+n]+= 3*a_prime_over_a*(w_fld-ca2)*y[pv->index_pt_big_theta_fld+n];
+
+        // // printf("%e %e \n",a,w_prime_fld/(1+w_fld));
+        // dy[pv->index_pt_big_theta_fld+n] = /* fluid velocity */
+        //   -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
+        //   +cs2*k2*y[pv->index_pt_delta_fld+n]
+        //   +(1+w_fld)*metric_euler;
+        // if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
+        //   dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld;//in reality w_prime_fld is w_prime_fld/(1+w_fld), more stable
+        // }
+        // else {
+        //   // if(w_prime_fld/(1+w_fld)>0.1)w_prime_fld=0;
+        //   dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld/(1+w_fld);
+        // }
         // printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
        // printf("%d  w_fld %e wprime %e dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n",ppt->use_big_theta_fld, w_fld,w_prime_fld,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
       }
