@@ -5811,12 +5811,19 @@ int perturb_total_stress_energy(
         // if(pba->w_free_function_from_file == _TRUE_){
         //   w_fld+=0.01;
         // }
-        w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-        // if(w_fld==-1) w_fld += 0.3;
-        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w) in the file
-        else if(pba->w_free_function_file_is_ca2 == _TRUE_)ca2 = dw_over_da_fld; //we store already ca2 in the file
-        // else ca2 = MAX(MIN(w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a,1),-1);
-        else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
+          w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+          ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+        }
+        else if(pba->w_free_function_file_is_ca2 == _TRUE_){
+          ca2 = MAX(MIN(dw_over_da_fld,10),-10); //we store already ca2 in the file
+          // ca2 = 0;
+          // printf("a %e ca2 %e\n", a,ca2);
+        }
+        else{
+          w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+          ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+        }
         if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
           // cs2=fabs(w_fld);
           cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
@@ -6764,12 +6771,20 @@ int perturb_print_variables(double tau,
           // if(pba->w_free_function_from_file == _TRUE_){
           //   w_fld+=0.01;
           // }
-          w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
           // if(w_fld==-1) w_fld += 0.3;
-          if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
-          else if(pba->w_free_function_file_is_ca2 == _TRUE_)ca2 = dw_over_da_fld; //we store already ca2 in the file
-          // else ca2 = MAX(MIN(w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a,1),-1);
-          else ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+          if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
+            w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+            ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+          }
+          else if(pba->w_free_function_file_is_ca2 == _TRUE_){
+            ca2 = MAX(MIN(dw_over_da_fld,10),-10); //we store already ca2 in the file
+            // ca2 = 0;
+            // printf("a %e ca2 %e\n", a,ca2);
+          }
+          else{
+            w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+            ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+          }
 
           if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
             // cs2=fabs(w_fld);
@@ -6956,12 +6971,20 @@ int perturb_print_variables(double tau,
           // if(pba->w_free_function_from_file == _TRUE_){
           //   w_fld+=0.01;
           // }
-          w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
           // if(w_fld==-1) w_fld += 0.3;
-          if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_)ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
-          // else ca2 = MAX(MIN(w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a,1),-1);
-          else if(pba->w_free_function_file_is_ca2 == _TRUE_)ca2 = dw_over_da_fld; //we store already ca2 in the file
-          else ca2 = w_fld;
+          if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
+            w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+            ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+          }
+          else if(pba->w_free_function_file_is_ca2 == _TRUE_){
+            ca2 = MAX(MIN(dw_over_da_fld,10),-10); //we store already ca2 in the file
+            // ca2 = 0;
+            // printf("a %e ca2 %e\n", a,ca2);
+          }
+          else{
+            w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+            ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+          }
           if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
             // cs2=fabs(w_fld);
             cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2));
@@ -7767,7 +7790,7 @@ int perturb_derivs(double tau,
           ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
         }
         else if(pba->w_free_function_file_is_ca2 == _TRUE_){
-          ca2 = dw_over_da_fld; //we store already ca2 in the file
+          ca2 = MAX(MIN(dw_over_da_fld,10),-10); //we store already ca2 in the file
           // ca2 = 0;
           // printf("a %e ca2 %e\n", a,ca2);
         }
