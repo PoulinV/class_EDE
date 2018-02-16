@@ -1000,7 +1000,7 @@ int background_init(
   /* necessary for calling array_interpolate(), but never used */
   int last_index=0;
   /* parameters required to get m_fld when playing with axion */
-  double tau_of_ac,p,F1_1,F1_2,cos_initial,sin_initial,wn,Eac,Omega_fld_ac,Omega0_fld;
+  double tau_of_ac,p,F1_1,F1_2,cos_initial,sin_initial,wn,Eac,Omega_fld_ac,Omega0_fld,signArg;
   int i;
   double n;
 
@@ -1121,6 +1121,15 @@ int background_init(
       else{
         p = 2./3;
       }
+        
+        if((n-1+n*cos_initial)>0){
+            signArg = 1.;
+        }
+        else{
+            signArg =-1.;
+        }
+        
+        
       cos_initial = cos(pba->Theta_initial_fld[i]);
       sin_initial = sin(pba->Theta_initial_fld[i]);
       n = pba->n_pheno_axion[i];
@@ -1128,8 +1137,8 @@ int background_init(
       if(pba->Omega0_fld!=0) Omega0_fld = pba->Omega0_fld;
       else Omega0_fld = pba->Omega_many_fld[i];
       Omega_fld_ac = Omega0_fld/2*(pow(pba->a_c[i],-3*(wn+1))+1);
-      F1_1 = gsl_sf_hyperg_0F1(1./2*(1+3*p),(n-1+n*cos_initial)/fabs(-1-n-n*cos_initial));
-      F1_2 = gsl_sf_hyperg_0F1(3./2*(1+p),(n-1+n*cos_initial)/fabs(-1-n-n*cos_initial));
+      F1_1 = gsl_sf_hyperg_0F1(1./2*(1+3*p),signArg);
+      F1_2 = gsl_sf_hyperg_0F1(3./2*(1+p),signArg);
       Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+Omega_fld_ac);
 
       pba->m_fld[i] = sqrt(4/n*pow(Eac,2)*pow(pow(1-cos_initial,n-1)*fabs(1-n*cos_initial-n),-1));
