@@ -342,6 +342,9 @@ struct background
   enum w_fld_parametrization w_fld_parametrization;
   int n_fld;
   double * m_fld;
+  double * alpha_fld;
+  double * Theta_initial_fld;
+  double * omega_axion;
   double * a_c;
   double * n_pheno_axion;
   //@}

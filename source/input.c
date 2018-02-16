@@ -1045,6 +1045,9 @@ int input_read_parameters(
                 }
               }
             }
+            else{
+              pba->w_free_function_from_file = _FALSE_;
+            }
             class_call(parser_read_string(pfc,
                                           "w_free_function_file_is_dw_over_1_p_w",
                                           &(string2),
@@ -1096,7 +1099,6 @@ int input_read_parameters(
             }
 
             class_read_double("ca2_max",pba->ca2_max);
-
 
             class_read_double("w_free_function_number_of_knots",pba->w_free_function_number_of_knots);
             double *tmp_w_free_function;
@@ -1183,16 +1185,6 @@ int input_read_parameters(
             }
             if(pba->n_fld!=0){
               class_call(parser_read_list_of_doubles(pfc,
-                                                     "a_c",
-                                                     &int1,
-                                                     &(pba->a_c),
-                                                     &flag2,
-                                                     errmsg),
-                         errmsg,errmsg);
-              class_test(int1!=pba->n_fld,"Careful: the size of the list of 'a_c' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
-              class_alloc(pba->m_fld,sizeof(double)*pba->n_fld,pba->error_message);
-
-              class_call(parser_read_list_of_doubles(pfc,
                                                      "n_pheno_axion",
                                                      &int1,
                                                      &(pba->n_pheno_axion),
@@ -1200,6 +1192,31 @@ int input_read_parameters(
                                                      errmsg),
                          errmsg,errmsg);
                class_test(int1!=pba->n_fld,"Careful: the size of the list of 'n_pheno_axion' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
+
+              class_call(parser_read_list_of_doubles(pfc,
+                                                     "a_c",
+                                                     &int1,
+                                                     &(pba->a_c),
+                                                     &flag2,
+                                                     errmsg),
+                         errmsg,errmsg);
+
+
+              class_test(int1!=pba->n_fld,"Careful: the size of the list of 'a_c' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
+
+              class_call(parser_read_list_of_doubles(pfc,
+                                                     "Theta_initial_fld",
+                                                     &int1,
+                                                     &(pba->Theta_initial_fld),
+                                                     &flag2,
+                                                     errmsg),
+                         errmsg,errmsg);
+
+             class_test(int1!=pba->n_fld,"Careful: the size of the list of 'Theta_initial_fld' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
+
+             class_alloc(pba->m_fld,sizeof(double)*pba->n_fld,pba->error_message);
+             class_alloc(pba->alpha_fld,sizeof(double)*pba->n_fld,pba->error_message);
+             class_alloc(pba->omega_axion,sizeof(double)*pba->n_fld,pba->error_message);
             }
        }
        else if((strstr(string1,"pheno_alternative") != NULL)) {
@@ -1309,7 +1326,7 @@ int input_read_parameters(
 
         class_read_double("cs2_fld",pba->cs2_fld);
         class_call(parser_read_string(pfc,
-                                      "cs2_is_w",
+                                      "cs2_is_1",
                                       &string1,
                                       &flag1,
                                       errmsg),
@@ -1318,10 +1335,26 @@ int input_read_parameters(
 
         if (flag1 == _TRUE_){
           if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-            ppt->cs2_is_w = _TRUE_;
+            ppt->cs2_is_1 = _TRUE_;
           }
           else {
-            ppt->cs2_is_w = _FALSE_;
+            ppt->cs2_is_1 = _FALSE_;
+          }
+        }
+        class_call(parser_read_string(pfc,
+                                      "cs2_and_ca2_switch",
+                                      &string1,
+                                      &flag1,
+                                      errmsg),
+                    errmsg,
+                    errmsg);
+
+        if (flag1 == _TRUE_){
+          if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+            ppt->cs2_and_ca2_switch = _TRUE_;
+          }
+          else {
+            ppt->cs2_and_ca2_switch = _FALSE_;
           }
         }
         class_call(parser_read_string(pfc,
@@ -3341,7 +3374,8 @@ int input_default_params(
   pba->w0_fld=-1.;
   pba->wa_fld=0.;
   pba->cs2_fld=1.;
-  ppt->cs2_is_w = _FALSE_;
+  ppt->cs2_is_1 = _FALSE_;
+  ppt->cs2_and_ca2_switch = _FALSE_;
   pba->w_fld_parametrization = CPL;
   pba->w_free_function_file_is_dw_over_1_p_w = _FALSE_;
   pba->ca2_max = 10;

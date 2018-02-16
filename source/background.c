@@ -79,6 +79,8 @@
  */
 
 #include "background.h"
+#include "gsl/gsl_sf_hyperg.h"
+#include "gsl/gsl_sf_gamma.h"
 
 /**
  * Background quantities at given conformal time tau.
@@ -525,8 +527,8 @@ int background_w_fld(
         Recfast does not assume anything */
   }
   else if(pba->w_fld_parametrization == pheno_axion){
-    w = (pba->n_pheno_axion[n]-1)/(1+pba->n_pheno_axion[n]);
-    *w_fld = (1+w)/(1+pow(pba->a_c[n]/a,3*(1+w)))-1+1e-10; //we add 1e-10 to avoid a crashing of the solver. Checked to be totally invisible.
+    w = (pba->n_pheno_axion[n]-1)/(1+pba->n_pheno_axion[n]); //e.o.s. once the field starts oscillating
+    *w_fld = (1+w)/(1+pow(pba->a_c[n]/a,3*(1+w)))-1+1e-15; //we add 1e-10 to avoid a crashing of the solver. Checked to be totally invisible.
     // *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
     *dw_over_da_fld = 3*pow(a/pba->a_today,-1-3*(1+w))*pba->a_c[n]/ pba->a_today*(1+w)*(1+w)/pow((1 + pba->a_c[n]/pba->a_today*pow(a/ pba->a_today,-3*(1+w))),2);
     *integral_fld = -(3*(1 + w)*(3*w*log(a/pba->a_today) + log(pow(a/pba->a_today,3) + pow(pba->a_c[n]/ pba->a_today,3)*pow(pba->a_c[n]/a,3*w)))/(3 + 3*w));
@@ -536,7 +538,7 @@ int background_w_fld(
     z = 1/a-1;
     center = 1/pba->a_c[n]-1;
     width = 2*center/200;//found to work well at capturing the sharp transition
-    wbefore = -1;
+    wbefore = -1+1e-15;
     wafter = (pba->n_pheno_axion[n]-1)/(1+pba->n_pheno_axion[n]);
     *w_fld = (wbefore - wafter)*(tanh((z - center)/width) + 1)/2 + wafter;
     // *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
@@ -998,9 +1000,9 @@ int background_init(
   /* necessary for calling array_interpolate(), but never used */
   int last_index=0;
   /* parameters required to get m_fld when playing with axion */
-  double tau_of_ac;
-  int n;
-
+  double tau_of_ac,p,F1_1,F1_2,cos_initial,sin_initial,wn,Eac,Omega_fld_ac,Omega0_fld;
+  int i;
+  double n;
 
   /** - in verbose mode, provide some information */
   if (pba->background_verbose > 0) {
@@ -1109,6 +1111,42 @@ int background_init(
 
   }
 
+  if(pba->w_fld_parametrization == pheno_axion){
+
+    for(i =0 ;i<pba->n_fld;i++){
+
+      if(pba->a_c[i]<(pba->Omega0_g+pba->Omega0_ur)/(pba->Omega0_b+pba->Omega0_cdm)){
+        p = 1./2;
+      }
+      else{
+        p = 2./3;
+      }
+      cos_initial = cos(pba->Theta_initial_fld[i]);
+      sin_initial = sin(pba->Theta_initial_fld[i]);
+      n = pba->n_pheno_axion[i];
+      wn = (n-1)/(n+1);
+      if(pba->Omega0_fld!=0) Omega0_fld = pba->Omega0_fld;
+      else Omega0_fld = pba->Omega_many_fld[i];
+      Omega_fld_ac = Omega0_fld/2*(pow(pba->a_c[i],-3*(wn+1))+1);
+      F1_1 = gsl_sf_hyperg_0F1(1./2*(1+3*p),(n-1+n*cos_initial)/fabs(-1-n-n*cos_initial));
+      F1_2 = gsl_sf_hyperg_0F1(3./2*(1+p),(n-1+n*cos_initial)/fabs(-1-n-n*cos_initial));
+      Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+Omega_fld_ac);
+
+      pba->m_fld[i] = sqrt(4/n*pow(Eac,2)*pow(pow(1-cos_initial,n-1)*fabs(1-n*cos_initial-n),-1));
+      // pba->m_fld[i] = 1e6;
+      // pba->alpha_fld[i] = 0.05;
+      pba->alpha_fld[i] =sqrt(3*Omega_fld_ac/pow(pba->m_fld[i],2)*pow(
+        pow(1-cos(pba->Theta_initial_fld[i]+(-1+F1_1)*sin_initial/(-1+n+n*cos_initial)),n)
+       +2*n*pow(1-cos_initial,n-1)*pow(F1_2*sin_initial,2)/(pow(1+3*p,2)*fabs(1-n-n*cos_initial)),-1));
+
+       // printf("(1+1./(2*n) %e ,((n+1)/(2*n)) %e, n %e\n",1+1./(2*n),(n+1.)/(2*n),n);
+      // pba->omega_axion[i] = pba->H0*sqrt(_PI_)*pow(2,-(n*n+1)/(2*n))*pow(Omega0_fld,(n-1)/(2*n))*gsl_sf_gamma((n+1.)/(2*n))*pow(pba->m_fld[i]*pba->alpha_fld[i],1./n)/(pba->alpha_fld[i]*gsl_sf_gamma(1+1./(2*n)));
+      pba->omega_axion[i] = pba->H0*sqrt(_PI_)*pow(2,-(n*n+1)/(2*n))*pow(2*pow(pba->a_c[i],3*(1+wn))*Omega_fld_ac/(1+pow(pba->a_c[i],3*(1+wn))),(n-1)/(2*n))*gsl_sf_gamma((n+1.)/(2*n))*pow(pba->m_fld[i]*pba->alpha_fld[i],1./n)/(pba->alpha_fld[i]*gsl_sf_gamma(1+1./(2*n)));
+
+
+      printf("pba->m_fld %e pba->alpha_fld %e pba->omega_axion[i] %e Omega_fld_ac  %e  %e %e\n", pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Omega_fld_ac,(pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4),gsl_sf_gamma(1+1./(2*n)));
+    }
+  }
   /* in verbose mode, inform the user about the value of the ncdm
      masses in eV and about the ratio [m/omega_ncdm] in eV (the usual
      93 point something)*/
@@ -1136,33 +1174,10 @@ int background_init(
              pba->error_message,
              pba->error_message);
 
-   if(pba->w_fld_parametrization == pheno_axion){
-     class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
-
-     /* check the time corresponding to the highest redshift requested in output plus one */
-     for(n =0 ;n<pba->n_fld;n++){
-       class_call(background_tau_of_z(pba,
-                                      1/pba->a_c[n]-1,
-                                      &tau_of_ac),
-                  pba->error_message,
-                  pba->error_message);
-       printf("tau %e zc %e\n",tau_of_ac,1/pba->a_c[n]-1);
-       class_call(background_at_tau(pba,
-                                    tau_of_ac,
-                                    pba->short_info,
-                                    pba->inter_normal,
-                                    &last_index,
-                                    pvecback),
-                  pba->error_message,
-                  pba->error_message);
-
-       class_call(background_w_fld(pba,pba->a_c[n],&w_fld,&dw_over_da,&integral_fld,0), pba->error_message, pba->error_message);
-       pba->m_fld[n] =sqrt(pow(2,1-pba->n_pheno_axion[n])*(2*pba->n_pheno_axion[n]-1)*9*(1+w_fld)*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_H]);
-       printf("pba->m_fld %e tau_of_ac %e\n", pba->m_fld[n],tau_of_ac);
-     }
 
 
-   }
+
+
 
   return _SUCCESS_;
 
@@ -2607,10 +2622,14 @@ int background_output_titles(struct background * pba,
         sprintf(tmp,"(.)ca2_fld[%d]",n);
         class_store_columntitle(titles,tmp,_TRUE_);
       }
-        else{
+      else if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
         sprintf(tmp,"(.)dw_over_w_fld[%d]",n);
         class_store_columntitle(titles,tmp,_TRUE_);
-        }
+      }
+      else{
+      sprintf(tmp,"(.)dw_fld[%d]",n);
+      class_store_columntitle(titles,tmp,_TRUE_);
+      }
 
     }
   }
@@ -2680,7 +2699,7 @@ int background_output_data(
           class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n],pba->has_fld,storeidx);
         }
         else {
-          class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n]/(1+pvecback[pba->index_bg_w_fld+n]),pba->has_fld,storeidx);
+          class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n],pba->has_fld,storeidx);
         }
       }
     }

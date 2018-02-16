@@ -185,7 +185,8 @@ struct perturbs
   // Unlike w/ ur species, I'm not defining 3*c_eff^2, but simply ceff^2 for gdm
   double ceff2_gdm;/**< 3 x effective squared sound speed for the GDM perturbations */
   double cvis2_gdm;/**< 3 x effective viscosity parameter for the GDM perturbations */
-  short cs2_is_w;
+  short cs2_is_1;
+  short cs2_and_ca2_switch;
   double z_max_pk; /**< when we compute only the matter spectrum / transfer functions, but not the CMB, we are sometimes interested to sample source functions at very high redshift, way before recombination. This z_max_pk will then fix the initial sampling time of the sources. */
 
   //@}
