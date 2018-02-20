@@ -7882,7 +7882,7 @@ int perturb_derivs(double tau,
           // // cs2=fabs(w_fld);
           // // cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2)); //Old w_fld_parametrization
           // cs2 = (2*a2*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2)/(2*a2*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2);
-
+          // printf("here %e %e %e\n",pba->m_fld[n],pba->omega_axion[n],pba->n_pheno_axion[n]);
           if(a<pba->a_c[n] && ppt->cs2_and_ca2_switch == _TRUE_){
             cs2 =1;
             ca2 = -7./3;

@@ -228,11 +228,11 @@ int input_init(
    * These two arrays must contain the strings of names to be searched
    *  for and the corresponding new parameter */
   char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr",
-                                       "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","sigma8"};
+                                       "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","sigma8","m_fld"};
   char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm",
-                                        "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","A_s"};
+                                        "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","A_s","a_c_to_shoot"};
   enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background,
-                                        cs_background, cs_background, cs_background, cs_spectra};
+                                        cs_background, cs_background, cs_background, cs_spectra,cs_background};
 
   int input_verbose = 0, int1, aux_flag, shooting_failed=_FALSE_;
 
@@ -250,6 +250,7 @@ int input_init(
                                   errmsg),
                errmsg,
                errmsg);
+
     if (flag1 == _TRUE_){
       /** - --> input_auxillary_target_conditions() takes care of the case where for
           instance Omega_dcdmdr is set to 0.0.
@@ -271,7 +272,6 @@ int input_init(
 
   /** - case with unknown parameters */
   if (unknown_parameters_size > 0) {
-
     /* Create file content structure with additional entries */
     class_call(parser_init(&(fzw.fc),
                            pfc->size+unknown_parameters_size,
@@ -307,7 +307,6 @@ int input_init(
                                     errmsg),
                errmsg,
                errmsg);
-
       // store name of target parameter
       fzw.target_name[counter] = index_target;
       // store target value of target parameter
@@ -514,10 +513,10 @@ int input_read_parameters(
 
   /** - define local variables */
 
-  int flag1,flag2,flag3;
+  int flag1,flag2,flag3,flag4;
   double param1,param2,param3;
   int N_ncdm=0,n,entries_read;
-  int int1,int2,int3,fileentries;
+  int int1,int2,int3,int4,fileentries;
   double scf_lambda;
   double fnu_factor;
   double * pointer1;
@@ -535,7 +534,7 @@ int input_read_parameters(
   double f_iso=0.;
   double n_cor=0.;
   double c_cor=0.;
-
+  double wn;
   double Omega_tot;
 
   int i;
@@ -1163,21 +1162,57 @@ int input_read_parameters(
                                                        &flag3,
                                                        errmsg),
                            errmsg,errmsg);
+                class_call(parser_read_list_of_doubles(pfc,
+                                                       "Omega_fld_ac",
+                                                       &int4,
+                                                       &(pba->Omega_fld_ac),
+                                                       &flag4,
+                                                       errmsg),
+                           errmsg,errmsg);
 
-                  if(flag2!=_FALSE_ || flag3!=_FALSE_){
+                  if(flag2!=_FALSE_ || flag3!=_FALSE_ ||flag4!=_FALSE_  ){
                     class_test(flag2==_TRUE_&&flag3==_TRUE_,"you have passed both 'Omega_many_fld' and 'fraction_axion'. Please pass only one of them.",errmsg,errmsg);
+                    class_test(flag2==_TRUE_&&flag4==_TRUE_,"you have passed both 'Omega_many_fld' and 'Omega_fld_ac'. Please pass only one of them.",errmsg,errmsg);
+                    class_test(flag3==_TRUE_&&flag4==_TRUE_,"you have passed both 'fraction_axion' and 'Omega_fld_ac'. Please pass only one of them.",errmsg,errmsg);
                     if(flag2==_TRUE_)pba->n_fld = int2;
                     if(flag3==_TRUE_)pba->n_fld = int3;
-                    for(n = 0; n < pba->n_fld; n++){
-                      if(flag3==_TRUE_){
-                        pba->Omega_many_fld[n] = pba->Omega0_cdm*pba->Omega_many_fld[n]/(1-pba->Omega_many_fld[n]);
+                    if(flag4==_TRUE_)pba->n_fld = int4;
+
+                    if(flag2 == _TRUE_ || flag3 == _TRUE_){
+                      class_alloc(pba->Omega_fld_ac,sizeof(double)*pba->n_fld,pba->error_message);
+                      for(n = 0; n < pba->n_fld; n++){
+                        if(flag3==_TRUE_){
+                          pba->Omega_many_fld[n] = pba->Omega0_cdm*pba->Omega_many_fld[n]/(1-pba->Omega_many_fld[n]);
+                        }
+                        pba->Omega_fld_ac[n] = 0; //will be attributed later;
+                        Omega_tot += pba->Omega_many_fld[n];
                       }
-                      Omega_tot += pba->Omega_many_fld[n];
-                      printf("pba->Omega_many_fld[n] %e pba->Omega0_cdm %e\n", pba->Omega_many_fld[n],pba->Omega0_cdm);
                     }
+                    if(flag4 == _TRUE_){
+                      class_alloc(pba->Omega_many_fld,sizeof(double)*pba->n_fld,pba->error_message);
+                      for(n = 0; n < pba->n_fld; n++){
+                          pba->Omega_many_fld[n] = 0;
+                      }
+                    }
+
+
                   }
                   else if(flag2==_FALSE_&&flag3==_FALSE_){
-                    class_stop(errmsg,"you have w_fld_parametrization defined but you forgot to give a value to Omega_fld, Omega_many_fld or fraction_axion. Please adapt you input file.")
+                    class_call(parser_read_list_of_doubles(pfc,
+                                                           "Theta_initial_fld",
+                                                           &int2,
+                                                           &(pba->Theta_initial_fld),
+                                                           &flag2,
+                                                           errmsg),
+                               errmsg,errmsg);
+
+                   if(flag2==_FALSE_){
+                     class_stop(errmsg,"you have w_fld_parametrization defined but you forgot to give a value to Omega_fld, Omega_many_fld, fraction_axion or Theta_initial_fld. Please adapt you input file.")
+                   }
+                   else{
+                     pba->n_fld = int2;
+                   }
+
                   }
                   }
             else{
@@ -1201,22 +1236,67 @@ int input_read_parameters(
                                                      errmsg),
                          errmsg,errmsg);
 
+              if(flag2 == _TRUE_){
+                class_test(int1!=pba->n_fld,"Careful: the size of the list of 'a_c' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
+                class_call(parser_read_list_of_doubles(pfc,
+                                                       "Theta_initial_fld",
+                                                       &int1,
+                                                       &(pba->Theta_initial_fld),
+                                                       &flag2,
+                                                       errmsg),
+                           errmsg,errmsg);
 
-              class_test(int1!=pba->n_fld,"Careful: the size of the list of 'a_c' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
+                 class_test(int1!=pba->n_fld,"Careful: the size of the list of 'Theta_initial_fld' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
 
-              class_call(parser_read_list_of_doubles(pfc,
-                                                     "Theta_initial_fld",
-                                                     &int1,
-                                                     &(pba->Theta_initial_fld),
-                                                     &flag2,
-                                                     errmsg),
-                         errmsg,errmsg);
 
-             class_test(int1!=pba->n_fld,"Careful: the size of the list of 'Theta_initial_fld' isn't equal to that of 'Omega_many_fld'!",errmsg,errmsg);
+                 class_alloc(pba->m_fld,sizeof(double)*pba->n_fld,pba->error_message);
+                 class_alloc(pba->alpha_fld,sizeof(double)*pba->n_fld,pba->error_message);
+                 class_alloc(pba->omega_axion,sizeof(double)*pba->n_fld,pba->error_message);
+                 for(n = 0; n < pba->n_fld; n++){
+                   wn = (pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1);
+                   if(pba->Omega_many_fld[n] == 0){
+                     pba->Omega_many_fld[n] = 2*pba->Omega_fld_ac[n]/(pow(pba->a_today/pba->a_c[n],3*(wn+1))+1);
+                     Omega_tot += pba->Omega_many_fld[n];
+                    }
+                    else if(pba->Omega_fld_ac[n] == 0){
+                      pba->Omega_fld_ac[n] = pba->Omega_many_fld[n]*(pow(pba->a_today/pba->a_c[n],3*(wn+1))+1)/2;
+                    }
+                    // printf("pba->Omega_many_fld[n] %e pba->Omega_many_fld_ac %e\n", pba->Omega_many_fld[n],pba->Omega_fld_ac[n]);
 
-             class_alloc(pba->m_fld,sizeof(double)*pba->n_fld,pba->error_message);
-             class_alloc(pba->alpha_fld,sizeof(double)*pba->n_fld,pba->error_message);
-             class_alloc(pba->omega_axion,sizeof(double)*pba->n_fld,pba->error_message);
+                  }
+              }
+              else{
+                class_test(pba->n_fld>1,errmsg,"You try to shoot for a_c with more than one field. This is not yet implemented sorry. Please adapt your param file.");
+                pba->axion_is_mu_and_alpha = _TRUE_;
+                class_call(parser_read_list_of_doubles(pfc,
+                                                       "m_fld",
+                                                       &int1,
+                                                       &(pba->m_fld),
+                                                       &flag2,
+                                                       errmsg),
+                           errmsg,errmsg);
+                class_call(parser_read_list_of_doubles(pfc,
+                                                       "alpha_fld",
+                                                       &int1,
+                                                       &(pba->alpha_fld),
+                                                       &flag2,
+                                                       errmsg),
+                           errmsg,errmsg);
+
+               pba->Theta_initial_fld[0]/=pba->alpha_fld[0];
+               class_alloc(pba->a_c,sizeof(double)*pba->n_fld,pba->error_message);
+               class_read_double("a_c_to_shoot",pba->a_c[0]);
+               class_alloc(pba->Omega_many_fld,sizeof(double)*pba->n_fld,pba->error_message);
+               class_alloc(pba->Omega_fld_ac,sizeof(double)*pba->n_fld,pba->error_message);
+               class_alloc(pba->omega_axion,sizeof(double)*pba->n_fld,pba->error_message);
+               pba->Omega_fld_ac[0]=pba->m_fld[0]*pba->m_fld[0]*pba->alpha_fld[0]*pba->alpha_fld[0]*(1-cos(pba->Theta_initial_fld[0]),pba->n_pheno_axion[0])/6;
+
+              }
+
+
+
+
+
             }
        }
        else if((strstr(string1,"pheno_alternative") != NULL)) {
@@ -4058,6 +4138,8 @@ int input_try_unknown_parameters(double * unknown_parameter,
   struct output op;           /* for output files */
   int i;
   double rho_dcdm_today, rho_dr_today;
+  double Omega_m, Omega_r, A;
+  double cos_initial,sin_initial,p;
   struct fzerofun_workspace * pfzw;
   int input_verbose;
   int flag;
@@ -4210,6 +4292,25 @@ int input_try_unknown_parameters(double * unknown_parameter,
     case sigma8:
       output[i] = sp.sigma8-pfzw->target_value[i];
       break;
+    case m_fld:
+      Omega_m = ba.Omega0_cdm+ba.Omega0_b;
+      Omega_r = ba.Omega0_g+ba.Omega0_ur;
+      // n = ba.n_pheno_axion[0];
+      // sin_initial = sin(ba.Theta_initial_fld[0]);
+      // cos_initial = cos(ba.Theta_initial_fld[0]);
+      // if(Omega_m*pow(ba.a_c[0],-3)>Omega_r*pow(ba.a_c[0],-4)){
+      //   p=2./3;
+      // }
+      // else{
+      //   p=1./2;
+      // }
+      //shooting only working for a single fluid!!
+      // A = ba.m_fld[0]*p*sqrt(n*sin_initial)*pow(1-cos_initial,(n-1)/2)/sqrt(2*(3*p+1));
+      A = 1./4*ba.m_fld[0]*ba.m_fld[0]*ba.n_pheno_axion[0]*pow(1-cos(ba.Theta_initial_fld[0]),ba.n_pheno_axion[0]-1)*fabs(1-ba.n_pheno_axion[0]*cos(ba.Theta_initial_fld[0])-ba.n_pheno_axion[0]);
+      output[i] = (Omega_m*pow(ba.a_c[0]*0.62,-3)+Omega_r*pow(ba.a_c[0]*0.62,-4)+ba.Omega0_lambda+ba.Omega_fld_ac[0]-A)/A;
+      // output[i] = (Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4)+ba.Omega0_lambda+ba.Omega_fld_ac[0]-A)/A;
+      printf("output[i] %e A %e Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4) %e\n", output[i],A,Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4));
+      break;
     }
   }
 
@@ -4261,6 +4362,7 @@ int input_get_guess(double *xguess,
   struct lensing le;          /* for lensed spectra */
   struct output op;           /* for output files */
   int i;
+  double Omega_m, Omega_r, A;
 
   double Omega_M, a_decay, gamma, Omega0_dcdmdr=1.0;
   int index_guess;
@@ -4380,6 +4482,20 @@ int input_get_guess(double *xguess,
       xguess[index_guess] = 2.43e-9/0.87659*pfzw->target_value[index_guess];
       dxdy[index_guess] = 2.43e-9/0.87659;
       break;
+
+    case m_fld:
+      A = 1./4*ba.m_fld[0]*ba.m_fld[0]*ba.n_pheno_axion[0]*pow(1-cos(ba.Theta_initial_fld[0]),ba.n_pheno_axion[0]-1)*fabs(1-ba.n_pheno_axion[0]*cos(ba.Theta_initial_fld[0])-ba.n_pheno_axion[0]);
+      Omega_m = ba.Omega0_cdm+ba.Omega0_b;
+      Omega_r = ba.Omega0_g+ba.Omega0_ur;
+      if(ba.m_fld[0] > 1e5){
+        xguess[index_guess] = pow(Omega_r/A,1./4)/2;
+        printf("xguess[index_guess] %e\n", xguess[index_guess]);
+      }
+      else{
+        xguess[index_guess] = pow(Omega_m/A,1./3)/2;
+      }
+      dxdy[index_guess] = 0.1*xguess[index_guess];
+      break;
     }
     //printf("xguess = %g\n",xguess[index_guess]);
   }
@@ -4398,7 +4514,7 @@ int input_find_root(double *xzero,
                     int *fevals,
                     struct fzerofun_workspace *pfzw,
                     ErrorMsg errmsg){
-  double x1, x2, f1, f2, dxdy, dx;
+  double x1, x2, f1, f2, dxdy, dx, dxtmp;
   int iter, iter2;
   int return_function;
   /** Summary: */
@@ -4420,7 +4536,12 @@ int input_find_root(double *xzero,
   /** - Do linear hunt for boundaries */
   for (iter=1; iter<=15; iter++){
     //x2 = x1 + search_dir*dx;
-    x2 = x1 - dx;
+    if(pfzw->target_name[0] == m_fld){
+        x2 = x1 + dx; //cannot become negative
+    }
+    else{
+      x2 = x1 - dx;
+    }
 
     for (iter2=1; iter2 <= 3; iter2++) {
       return_function = input_fzerofun_1d(x2,pfzw,&f2,errmsg);
@@ -4468,6 +4589,7 @@ int input_find_root(double *xzero,
 
   return _SUCCESS_;
 }
+
 
 int file_exists(const char *fname){
   FILE *file = fopen(fname, "r");

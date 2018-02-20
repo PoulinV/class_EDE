@@ -1000,7 +1000,7 @@ int background_init(
   /* necessary for calling array_interpolate(), but never used */
   int last_index=0;
   /* parameters required to get m_fld when playing with axion */
-  double tau_of_ac,p,F1_1,F1_2,cos_initial,sin_initial,wn,Eac,Omega_fld_ac,Omega0_fld,signArg;
+  double tau_of_ac,p,F1_1,F1_2,cos_initial,sin_initial,wn,Eac,Omega_fld_ac,Omega0_fld,signArg,xc,Gac,f;
   int i;
   double n;
 
@@ -1113,48 +1113,96 @@ int background_init(
 
   if(pba->w_fld_parametrization == pheno_axion){
 
-    for(i =0 ;i<pba->n_fld;i++){
-
-      if(pba->a_c[i]<(pba->Omega0_g+pba->Omega0_ur)/(pba->Omega0_b+pba->Omega0_cdm)){
+    if(pba->axion_is_mu_and_alpha == _TRUE_){
+      printf("Here %e\n",pba->a_c[0]);
+      //We have passed mu and alpha so we need to assign Omega_ac, ac and omega_n. Only works with a single fluid.
+      if(pba->a_c[0]<(pba->Omega0_g+pba->Omega0_ur)/(pba->Omega0_b+pba->Omega0_cdm)){
         p = 1./2;
       }
       else{
         p = 2./3;
       }
-        
-        if((n-1+n*cos_initial)>0){
-            signArg = 1.;
+
+
+      cos_initial = cos(pba->Theta_initial_fld[0]);
+      sin_initial = sin(pba->Theta_initial_fld[0]);
+      n = pba->n_pheno_axion[0];
+
+      if((n-1+n*cos_initial)>0){
+          signArg = 1.;
+      }
+      else{
+          signArg = -1.;
+      }
+
+      wn = (n-1)/(n+1);
+
+
+
+     // printf(" (pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[0],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[0],-3) %e pba->Omega_fld_ac[0] %e\n",(pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[0],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[0],-3),pba->Omega_fld_ac[0]);
+      pba->Omega_many_fld[0] = 2*pba->Omega_fld_ac[0]/(pow(pba->a_c[0],-3*wn-3)+1);
+      pba->Omega0_lambda -= pba->Omega_many_fld[0]; // we want a flat universe today.
+      pba->omega_axion[0] = pba->H0*sqrt(_PI_)*pow(2,-(n*n+1)/(2*n))*pow(2*pow(pba->a_c[0],3*(1+wn))*pba->Omega_fld_ac[0]/(1+pow(pba->a_c[0],3*(1+wn))),(n-1)/(2*n))*gsl_sf_gamma((n+1.)/(2*n))*pow(pba->m_fld[0]*pba->alpha_fld[0],1./n)/(pba->alpha_fld[0]*gsl_sf_gamma(1+1./(2*n)));
+      // printf("pba->Omega_many_fld[0] %e (pow(pba->a_c[0],-3*(wn+1))+1) %e wn %e\n",pba->Omega_many_fld[0],pow(pba->a_c[0],-3*wn-3)+1);
+    }
+    else{
+      for(i =0 ;i<pba->n_fld;i++){
+
+        if(pba->a_c[i]<(pba->Omega0_g+pba->Omega0_ur)/(pba->Omega0_b+pba->Omega0_cdm)){
+          p = 1./2;
         }
         else{
-            signArg =-1.;
+          p = 2./3;
         }
-        
-        
-      cos_initial = cos(pba->Theta_initial_fld[i]);
-      sin_initial = sin(pba->Theta_initial_fld[i]);
-      n = pba->n_pheno_axion[i];
-      wn = (n-1)/(n+1);
-      if(pba->Omega0_fld!=0) Omega0_fld = pba->Omega0_fld;
-      else Omega0_fld = pba->Omega_many_fld[i];
-      Omega_fld_ac = Omega0_fld/2*(pow(pba->a_c[i],-3*(wn+1))+1);
-      F1_1 = gsl_sf_hyperg_0F1(1./2*(1+3*p),signArg);
-      F1_2 = gsl_sf_hyperg_0F1(3./2*(1+p),signArg);
-      Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+Omega_fld_ac);
 
-      pba->m_fld[i] = sqrt(4/n*pow(Eac,2)*pow(pow(1-cos_initial,n-1)*fabs(1-n*cos_initial-n),-1));
-      // pba->m_fld[i] = 1e6;
-      // pba->alpha_fld[i] = 0.05;
-      pba->alpha_fld[i] =sqrt(3*Omega_fld_ac/pow(pba->m_fld[i],2)*pow(
-        pow(1-cos(pba->Theta_initial_fld[i]+(-1+F1_1)*sin_initial/(-1+n+n*cos_initial)),n)
-       +2*n*pow(1-cos_initial,n-1)*pow(F1_2*sin_initial,2)/(pow(1+3*p,2)*fabs(1-n-n*cos_initial)),-1));
-
-       // printf("(1+1./(2*n) %e ,((n+1)/(2*n)) %e, n %e\n",1+1./(2*n),(n+1.)/(2*n),n);
-      // pba->omega_axion[i] = pba->H0*sqrt(_PI_)*pow(2,-(n*n+1)/(2*n))*pow(Omega0_fld,(n-1)/(2*n))*gsl_sf_gamma((n+1.)/(2*n))*pow(pba->m_fld[i]*pba->alpha_fld[i],1./n)/(pba->alpha_fld[i]*gsl_sf_gamma(1+1./(2*n)));
-      pba->omega_axion[i] = pba->H0*sqrt(_PI_)*pow(2,-(n*n+1)/(2*n))*pow(2*pow(pba->a_c[i],3*(1+wn))*Omega_fld_ac/(1+pow(pba->a_c[i],3*(1+wn))),(n-1)/(2*n))*gsl_sf_gamma((n+1.)/(2*n))*pow(pba->m_fld[i]*pba->alpha_fld[i],1./n)/(pba->alpha_fld[i]*gsl_sf_gamma(1+1./(2*n)));
+          if((n-1+n*cos_initial)>0){
+              signArg = 1.;
+          }
+          else{
+              signArg =-1.;
+          }
 
 
-      printf("pba->m_fld %e pba->alpha_fld %e pba->omega_axion[i] %e Omega_fld_ac  %e  %e %e\n", pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Omega_fld_ac,(pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4),gsl_sf_gamma(1+1./(2*n)));
+        cos_initial = cos(pba->Theta_initial_fld[i]);
+        sin_initial = sin(pba->Theta_initial_fld[i]);
+        n = pba->n_pheno_axion[i];
+        wn = (n-1)/(n+1);
+
+
+        if(pba->Omega0_fld!=0 || pba->Omega_many_fld[i] != 0) Omega0_fld = pba->Omega0_fld;
+        else Omega0_fld = pba->Omega_many_fld[i];
+        Omega_fld_ac = Omega0_fld/2*(pow(pba->a_c[i],-3*(wn+1))+1);
+
+        F1_1 = gsl_sf_hyperg_0F1(1./2*(1+3*p),signArg);
+        F1_2 = gsl_sf_hyperg_0F1(3./2*(1+p),signArg);
+        Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]);
+
+        xc = p/Eac;
+        f = 7./8;
+        // pba->m_fld[i] = sqrt(4/n*pow(Eac,2)*pow(pow(1-cos_initial,n-1)*fabs(1-n*cos_initial-n),-1)); //OLD
+        // pba->alpha_fld[i] =sqrt(3*pba->Omega_fld_ac/pow(pba->m_fld[i],2)*pow(
+        //   pow(1-cos(pba->Theta_initial_fld[i]+(-1+F1_1)*sin_initial/(-1+n+n*cos_initial)),n)
+        //  +2*n*pow(1-cos_initial,n-1)*pow(F1_2*sin_initial,2)/(pow(1+3*p,2)*fabs(1-n-n*cos_initial)),-1));
+        // pba->omega_axion[i] = pba->H0*sqrt(_PI_)*pow(2,-(n*n+1)/(2*n))*pow(2*pow(pba->a_c[i],3*(1+wn))*Omega_fld_ac/(1+pow(pba->a_c[i],3*(1+wn))),(n-1)/(2*n))*gsl_sf_gamma((n+1.)/(2*n))*pow(pba->m_fld[i]*pba->alpha_fld[i],1./n)/(pba->alpha_fld[i]*gsl_sf_gamma(1+1./(2*n)));
+
+
+        pba->m_fld[i] = pow(1-cos_initial,(1.-n)/2.)*sqrt((1-f)*(6*p+2)*pba->Theta_initial_fld[i]/(n*sin_initial))/xc;
+        pba->alpha_fld[i] = sqrt(6 * pba->Omega_fld_ac[i])/pba->m_fld[i]/pow(1-cos_initial,n/2);
+
+        Gac =sqrt(_PI_)*gsl_sf_gamma((n+1.)/(2*n))/gsl_sf_gamma(1+1./(2*n))*pow(2,-(n*n+1)/(2*n))*pow(3,0.5*(1./n-1))
+        *pow(pba->a_c[i],3-6./(1+n))*pow(pow(pba->a_c[i],6*n/(1+n))+1,0.5*(1./n-1));
+
+        pba->omega_axion[i] = pba->H0*pba->m_fld[i]*pow(1-cos_initial,0.5*(n-1))*Gac;
+
+
+        // printf("pba->m_fld %e pba->alpha_fld %e pba->omega_axion[i] %e Gac  %e  \n", pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac);
+      }
     }
+
+
+
+
+
   }
   /* in verbose mode, inform the user about the value of the ncdm
      masses in eV and about the ratio [m/omega_ncdm] in eV (the usual
