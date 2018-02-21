@@ -66,7 +66,6 @@ def main():
                         '../include/%s' % line.split()[-1].strip('"'))
             if line.find('class modules') != -1:
                 in_modules = True
-
     logger.info('Extracted the following headers: %s', ', '.join(headers))
     output = 'classy.pyx'
     logger.info('Creating %s', output)
