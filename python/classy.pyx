@@ -1363,6 +1363,12 @@ cdef class Class:
                 value = self.ba.Omega0_fld
             elif name == 'Omega0_axion':
                 value = self.ba.Omega_many_fld[0]
+            elif name == 'm_axion':
+                value = self.ba.m_fld[0]
+            elif name == 'omega_axion':
+                value = self.ba.omega_axion[0]
+            elif name == 'alpha_axion':
+                value = self.ba.alpha_fld[0]
             elif name == 'Omega_axion_ac':
                 value = self.ba.Omega_fld_ac[0]
             elif name == 'age':
