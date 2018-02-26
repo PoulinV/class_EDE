@@ -1289,8 +1289,8 @@ int input_read_parameters(
                class_alloc(pba->Omega_many_fld,sizeof(double)*pba->n_fld,pba->error_message);
                class_alloc(pba->Omega_fld_ac,sizeof(double)*pba->n_fld,pba->error_message);
                class_alloc(pba->omega_axion,sizeof(double)*pba->n_fld,pba->error_message);
-               pba->Omega_fld_ac[0]=pba->m_fld[0]*pba->m_fld[0]*pba->alpha_fld[0]*pba->alpha_fld[0]*(1-cos(pba->Theta_initial_fld[0]),pba->n_pheno_axion[0])/6;
-
+               pba->Omega_fld_ac[0]=pba->m_fld[0]*pba->m_fld[0]*pba->alpha_fld[0]*pba->alpha_fld[0]*pow(1-cos(pba->Theta_initial_fld[0]),pba->n_pheno_axion[0])/6;
+               // printf("pba->Omega_fld_ac[0] %e\n", pba->Omega_fld_ac[0]);
               }
 
 
@@ -3468,7 +3468,7 @@ int input_default_params(
   ppt->use_big_theta_fld = _FALSE_;
   pba->c_gamma_over_c_fld = 0.4;
   pba->fld_has_perturbations = _TRUE_;
-
+  pba->axion_is_mu_and_alpha = _FALSE_;
   pba->shooting_failed = _FALSE_;
 
   /** - thermodynamics structure */
@@ -4578,7 +4578,7 @@ int input_find_root(double *xzero,
   class_call(class_fzero_ridder(input_fzerofun_1d,
                                 x1,
                                 x2,
-                                1e-5*MAX(fabs(x1),fabs(x2)),
+                                1e-15*MAX(fabs(x1),fabs(x2)),
                                 pfzw,
                                 &f1,
                                 &f2,

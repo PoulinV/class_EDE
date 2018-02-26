@@ -424,6 +424,9 @@ int background_functions(
       // But now everthing is integrated numerically for a given w_fld(a) defined in the function background_w_fld.
       rho_tot += pvecback[pba->index_bg_rho_fld+n];
       p_tot += w_fld * pvecback[pba->index_bg_rho_fld+n];
+
+      rho_m += pvecback[pba->index_bg_rho_fld+n] - 3*w_fld * pvecback[pba->index_bg_rho_fld+n];
+      rho_r += 3*w_fld * pvecback[pba->index_bg_rho_fld+n];
     }
 
   }
@@ -1114,7 +1117,7 @@ int background_init(
   if(pba->w_fld_parametrization == pheno_axion){
 
     if(pba->axion_is_mu_and_alpha == _TRUE_){
-      printf("Here %e\n",pba->a_c[0]);
+      // printf("Here %e\n",pba->a_c[0]);
       //We have passed mu and alpha so we need to assign Omega_ac, ac and omega_n. Only works with a single fluid.
       if(pba->a_c[0]<(pba->Omega0_g+pba->Omega0_ur)/(pba->Omega0_b+pba->Omega0_cdm)){
         p = 1./2;
@@ -1136,7 +1139,6 @@ int background_init(
       }
 
       wn = (n-1)/(n+1);
-
 
 
      // printf(" (pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[0],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[0],-3) %e pba->Omega_fld_ac[0] %e\n",(pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[0],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[0],-3),pba->Omega_fld_ac[0]);
