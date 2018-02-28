@@ -1148,6 +1148,15 @@ int input_read_parameters(
                     errmsg,
                     errmsg);
          if(flag2==_FALSE_){
+
+                 class_call(parser_read_list_of_doubles(pfc,
+                                                        "omega_many_fld",
+                                                        &int1,
+                                                        &(pba->Omega_many_fld),
+                                                        &flag1,
+                                                        errmsg),
+                            errmsg,errmsg);
+
                  class_call(parser_read_list_of_doubles(pfc,
                                                         "Omega_many_fld",
                                                         &int2,
@@ -1170,14 +1179,24 @@ int input_read_parameters(
                                                        errmsg),
                            errmsg,errmsg);
 
-                  if(flag2!=_FALSE_ || flag3!=_FALSE_ ||flag4!=_FALSE_  ){
+                  if(flag1 == _TRUE_ || flag2!=_FALSE_ || flag3!=_FALSE_ ||flag4!=_FALSE_  ){
+
+                    class_test(flag1==_TRUE_&&flag2==_TRUE_,"you have passed both 'Omega_many_fld' and 'omega_many_fld'. Please pass only one of them.",errmsg,errmsg);
                     class_test(flag2==_TRUE_&&flag3==_TRUE_,"you have passed both 'Omega_many_fld' and 'fraction_axion'. Please pass only one of them.",errmsg,errmsg);
                     class_test(flag2==_TRUE_&&flag4==_TRUE_,"you have passed both 'Omega_many_fld' and 'Omega_fld_ac'. Please pass only one of them.",errmsg,errmsg);
                     class_test(flag3==_TRUE_&&flag4==_TRUE_,"you have passed both 'fraction_axion' and 'Omega_fld_ac'. Please pass only one of them.",errmsg,errmsg);
+                    if(flag1==_TRUE_)pba->n_fld = int1;
                     if(flag2==_TRUE_)pba->n_fld = int2;
                     if(flag3==_TRUE_)pba->n_fld = int3;
                     if(flag4==_TRUE_)pba->n_fld = int4;
-
+                    if (flag1 == _TRUE_){
+                      for(n = 0; n < pba->n_fld; n++){
+                      class_alloc(pba->Omega_fld_ac,sizeof(double)*pba->n_fld,pba->error_message);
+                      pba->Omega_many_fld[n] *= 1/pba->h/pba->h;
+                      pba->Omega_fld_ac[n] = 0; //will be attributed later;
+                      Omega_tot += pba->Omega_many_fld[n];
+                      }
+                    }
                     if(flag2 == _TRUE_ || flag3 == _TRUE_){
                       class_alloc(pba->Omega_fld_ac,sizeof(double)*pba->n_fld,pba->error_message);
                       for(n = 0; n < pba->n_fld; n++){
