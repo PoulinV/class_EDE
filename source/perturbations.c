@@ -7926,7 +7926,7 @@ int perturb_derivs(double tau,
 
         /** - ----> fluid velocity */
       if(ppt->use_big_theta_fld == _TRUE_){
-        dy[pv->index_pt_big_theta_fld] = /* fluid velocity */
+        dy[pv->index_pt_big_theta_fld+n] = /* fluid velocity */
           -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld]
           +cs2*k2*y[pv->index_pt_delta_fld]
           +(1+w_fld)*metric_euler;
