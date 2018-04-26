@@ -1216,7 +1216,8 @@ int input_read_parameters(
 
 
                   }
-                  else if(flag2==_FALSE_&&flag3==_FALSE_){
+                  // else if(flag2==_FALSE_&&flag3==_FALSE_){
+                  else{
                     class_call(parser_read_list_of_doubles(pfc,
                                                            "Theta_initial_fld",
                                                            &int2,

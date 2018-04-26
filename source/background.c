@@ -535,7 +535,7 @@ int background_w_fld(
     // *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
     *dw_over_da_fld = 3*pow(a/pba->a_today,-1-3*(1+w))*pba->a_c[n]/ pba->a_today*(1+w)*(1+w)/pow((1 + pba->a_c[n]/pba->a_today*pow(a/ pba->a_today,-3*(1+w))),2);
     *integral_fld = -(3*(1 + w)*(3*w*log(a/pba->a_today) + log(pow(a/pba->a_today,3) + pow(pba->a_c[n]/ pba->a_today,3)*pow(pba->a_c[n]/a,3*w)))/(3 + 3*w));
-    // printf("%e %e %e %e \n",a,*w_fld,*dw_over_da_fld,*integral_fld);
+    // printf("%e %e %e %e %d\n",a,*w_fld,*dw_over_da_fld,*integral_fld,n);
   }
   else if(pba->w_fld_parametrization == pheno_alternative){
     z = 1/a-1;
@@ -1171,13 +1171,15 @@ int background_init(
         wn = (n-1)/(n+1);
 
 
-        if(pba->Omega0_fld!=0 || pba->Omega_many_fld[i] != 0) Omega0_fld = pba->Omega0_fld;
+        // if(pba->Omega0_fld!=0 || pba->Omega_many_fld[i] != 0) Omega0_fld = pba->Omega0_fld;
+        if(pba->Omega0_fld!=0) Omega0_fld = pba->Omega0_fld;
         else Omega0_fld = pba->Omega_many_fld[i];
         Omega_fld_ac = Omega0_fld/2*(pow(pba->a_c[i],-3*(wn+1))+1);
 
         F1_1 = gsl_sf_hyperg_0F1(1./2*(1+3*p),signArg);
         F1_2 = gsl_sf_hyperg_0F1(3./2*(1+p),signArg);
-        Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]);
+        // Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]);
+        Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3));
 
         xc = p/Eac;
         f = 7./8;
@@ -1197,7 +1199,7 @@ int background_init(
         pba->omega_axion[i] = pba->H0*pba->m_fld[i]*pow(1-cos_initial,0.5*(n-1))*Gac;
 
 
-        // printf("pba->m_fld %e pba->alpha_fld %e pba->omega_axion[i] %e Gac  %e  \n", pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac);
+        // printf("pba->m_fld %e pba->alpha_fld %e pba->omega_axion[i] %e Gac  %e pba->a_c[i] %e \n", pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac,pba->a_c[i]);
       }
     }
 
@@ -2431,6 +2433,8 @@ int background_initial_conditions(
   double rho_fld_today;
   double w_fld,dw_over_da_fld,integral_fld;
   int n;
+  int is_log = _TRUE_;
+  double tmp_integral = 0;
   /** - fix initial value of \f$ a \f$ */
   a = ppr->a_ini_over_a_today_default * pba->a_today;
   // printf("a %e \n",a);
@@ -2532,8 +2536,8 @@ int background_initial_conditions(
       numerically the simple 1d integral [int_{a_ini}^{a_0} 3
       [(1+w_fld)/a] da] (e.g. with the Romberg method?) instead of
       calling background_w_fld */
-      int is_log = _TRUE_;
-      double tmp_integral = 0;
+      is_log = _TRUE_;
+      tmp_integral = 0;
       if(pba->w_fld_parametrization == w_free_function) {
         if(pba->w_free_function_from_file == _TRUE_){
           is_log = _FALSE_;

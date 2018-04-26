@@ -5852,6 +5852,7 @@ int perturb_total_stress_energy(
               cs2=1;
             }
             else {
+              // printf("%e %e\n",pba->n_pheno_axion[n], pba->omega_axion[n]);
               cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
             }
             w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
@@ -7068,7 +7069,7 @@ int perturb_print_variables(double tau,
           }
           else cs2 = pba->cs2_fld;
 
-          // printf("cs2 %e ca2 %e a %e k %e\n",cs2,ca2,a,k);
+          // printf("cs2 %e ca2/ %e a %e k %e\n",cs2,ca2,a,k);
           delta_fld[n] += alpha*(-3.0*H*(1.0+w_fld));
 
           if(ppt->use_big_theta_fld == _TRUE_) {
@@ -7901,7 +7902,7 @@ int perturb_derivs(double tau,
         else cs2 = pba->cs2_fld;
 
 
-        // printf("k %e a %e 1+w %e dw %e dw/1+w %e cs2 %e ca2 %e\n",k,a,1+w_fld,w_prime_fld,w_prime_fld/(1+w_fld),cs2,ca2);
+        // printf("k %e a %e 1+w %e dw %e dw/1+w %e cs2 %e ca2 %e n %d\n",k,a,1+w_fld,w_prime_fld,w_prime_fld/(1+w_fld),cs2,ca2,n);
 
 
         /** - ----> fluid density */
@@ -7927,8 +7928,8 @@ int perturb_derivs(double tau,
         /** - ----> fluid velocity */
       if(ppt->use_big_theta_fld == _TRUE_){
         dy[pv->index_pt_big_theta_fld+n] = /* fluid velocity */
-          -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld]
-          +cs2*k2*y[pv->index_pt_delta_fld]
+          -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
+          +cs2*k2*y[pv->index_pt_delta_fld+n]
           +(1+w_fld)*metric_euler;
           dy[pv->index_pt_big_theta_fld+n]+= 3*a_prime_over_a*(w_fld-ca2)*y[pv->index_pt_big_theta_fld+n];
 
