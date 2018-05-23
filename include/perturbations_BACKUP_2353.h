@@ -185,9 +185,13 @@ struct perturbs
   // Unlike w/ ur species, I'm not defining 3*c_eff^2, but simply ceff^2 for gdm
   double ceff2_gdm;/**< 3 x effective squared sound speed for the GDM perturbations */
   double cvis2_gdm;/**< 3 x effective viscosity parameter for the GDM perturbations */
+<<<<<<< HEAD
+  
+  short cs2_is_w;
+=======
   short cs2_is_1;
-  short cs2_switch;
-  short ca2_switch;
+  short cs2_and_ca2_switch;
+>>>>>>> devel
   double z_max_pk; /**< when we compute only the matter spectrum / transfer functions, but not the CMB, we are sometimes interested to sample source functions at very high redshift, way before recombination. This z_max_pk will then fix the initial sampling time of the sources. */
 
   //@}
@@ -329,7 +333,7 @@ struct perturbs
   int * tp_size; /**< number of types tp_size[index_md] included in computation for each mode */
 
   //@}
-
+     // TK look here what is this? 
   short use_big_theta_fld;
 
   /** @name - list of k values for each mode */
@@ -436,6 +440,7 @@ struct perturb_vector
   int index_pt_delta_fld;  /**< dark energy density in true fluid case */
   int index_pt_delta_p_over_rho_fld;  /**< dark energy delta_p_over_rho in true fluid case */
   int index_pt_theta_fld;  /**< dark energy velocity in true fluid case */
+  // TK look here what's this? 
   int index_pt_big_theta_fld;  /**< dark energy velocity divided by (1+w_fld) in true fluid case */
   int index_pt_Gamma_fld;  /**< unique dark energy dynamical variable in PPF case */
   int index_pt_phi_scf;  /**< scalar field density */

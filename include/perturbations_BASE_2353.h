@@ -185,9 +185,7 @@ struct perturbs
   // Unlike w/ ur species, I'm not defining 3*c_eff^2, but simply ceff^2 for gdm
   double ceff2_gdm;/**< 3 x effective squared sound speed for the GDM perturbations */
   double cvis2_gdm;/**< 3 x effective viscosity parameter for the GDM perturbations */
-  short cs2_is_1;
-  short cs2_switch;
-  short ca2_switch;
+  short cs2_is_w;
   double z_max_pk; /**< when we compute only the matter spectrum / transfer functions, but not the CMB, we are sometimes interested to sample source functions at very high redshift, way before recombination. This z_max_pk will then fix the initial sampling time of the sources. */
 
   //@}
@@ -315,8 +313,6 @@ struct perturbs
   int index_tp_theta_dr;   /**< index value for F1 of decay radiation */
   int index_tp_theta_ncdm1;/**< index value for theta of first non-cold dark matter species (e.g. massive neutrinos) */
 
-  int index_tp_delta_p_over_rho_fld;  /**< index value for delta_p_over_rho of dark energy */
-
   int index_tp_phi;          /**< index value for metric fluctuation phi */
   int index_tp_phi_prime;    /**< index value for metric fluctuation phi' */
   int index_tp_phi_plus_psi; /**< index value for metric fluctuation phi+psi */
@@ -434,7 +430,6 @@ struct perturb_vector
   int index_pt_delta_dcdm; /**< dcdm density */
   int index_pt_theta_dcdm; /**< dcdm velocity */
   int index_pt_delta_fld;  /**< dark energy density in true fluid case */
-  int index_pt_delta_p_over_rho_fld;  /**< dark energy delta_p_over_rho in true fluid case */
   int index_pt_theta_fld;  /**< dark energy velocity in true fluid case */
   int index_pt_big_theta_fld;  /**< dark energy velocity divided by (1+w_fld) in true fluid case */
   int index_pt_Gamma_fld;  /**< unique dark energy dynamical variable in PPF case */

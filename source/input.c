@@ -657,7 +657,6 @@ int input_read_parameters(
       pba->T_cmb = pow(pba->Omega0_g * (3.*_c_*_c_*1.e10*pba->h*pba->h/_Mpc_over_m_/_Mpc_over_m_/8./_PI_/_G_) / (4.*sigma_B/_c_),0.25);
     }
   }
-
   Omega_tot = pba->Omega0_g;
 
   /** - Omega_0_b (baryons) */
@@ -1442,7 +1441,7 @@ int input_read_parameters(
           }
         }
         class_call(parser_read_string(pfc,
-                                      "cs2_and_ca2_switch",
+                                      "cs2_switch",
                                       &string1,
                                       &flag1,
                                       errmsg),
@@ -1451,10 +1450,26 @@ int input_read_parameters(
 
         if (flag1 == _TRUE_){
           if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-            ppt->cs2_and_ca2_switch = _TRUE_;
+            ppt->cs2_switch = _TRUE_;
           }
           else {
-            ppt->cs2_and_ca2_switch = _FALSE_;
+            ppt->cs2_switch = _FALSE_;
+          }
+        }
+        class_call(parser_read_string(pfc,
+                                      "ca2_switch",
+                                      &string1,
+                                      &flag1,
+                                      errmsg),
+                    errmsg,
+                    errmsg);
+
+        if (flag1 == _TRUE_){
+          if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+            ppt->ca2_switch = _TRUE_;
+          }
+          else {
+            ppt->ca2_switch = _FALSE_;
           }
         }
         class_call(parser_read_string(pfc,
@@ -3475,7 +3490,8 @@ int input_default_params(
   pba->wa_fld=0.;
   pba->cs2_fld=1.;
   ppt->cs2_is_1 = _FALSE_;
-  ppt->cs2_and_ca2_switch = _FALSE_;
+  ppt->cs2_switch = _FALSE_;
+  ppt->ca2_switch = _FALSE_;
   pba->w_fld_parametrization = CPL;
   pba->w_free_function_file_is_dw_over_1_p_w = _FALSE_;
   pba->ca2_max = 10;
@@ -4417,6 +4433,7 @@ int input_get_guess(double *xguess,
       /** - Update pb to reflect guess */
       ba.h = xguess[index_guess];
       ba.H0 = ba.h *  1.e5 / _c_;
+      printf("xguess[index_guess] here %e\n", xguess[index_guess]);
       break;
     case Omega_dcdmdr:
       Omega_M = ba.Omega0_cdm+ba.Omega0_dcdmdr+ba.Omega0_b;
@@ -4509,7 +4526,6 @@ int input_get_guess(double *xguess,
       Omega_r = ba.Omega0_g+ba.Omega0_ur;
       if(ba.m_fld[0] > 1e5){
         xguess[index_guess] = pow(Omega_r/A,1./4)/2;
-        printf("xguess[index_guess] %e\n", xguess[index_guess]);
       }
       else{
         xguess[index_guess] = pow(Omega_m/A,1./3)/2;
@@ -4542,17 +4558,16 @@ int input_find_root(double *xzero,
   /** - Fisrt we do our guess */
   class_call(input_get_guess(&x1, &dxdy, pfzw, errmsg),
              errmsg, errmsg);
-  //      printf("x1= %g\n",x1);
+       printf("x1= %g\n",x1);
   class_call(input_fzerofun_1d(x1,
                                pfzw,
                                &f1,
                                errmsg),
                  errmsg, errmsg);
   (*fevals)++;
-  //printf("x1= %g, f1= %g\n",x1,f1);
+  printf("x1= %g, f1= %g\n",x1,f1);
 
   dx = 1.5*f1*dxdy;
-
   /** - Do linear hunt for boundaries */
   for (iter=1; iter<=15; iter++){
     //x2 = x1 + search_dir*dx;
@@ -4566,8 +4581,8 @@ int input_find_root(double *xzero,
     for (iter2=1; iter2 <= 3; iter2++) {
       return_function = input_fzerofun_1d(x2,pfzw,&f2,errmsg);
       (*fevals)++;
-      //printf("x2= %g, f2= %g\n",x2,f2);
-      //fprintf(stderr,"iter2=%d\n",iter2);
+      printf("x2= %g, f2= %g\n",x2,f2);
+      fprintf(stderr,"iter2=%d\n",iter2);
 
       if (return_function ==_SUCCESS_) {
         break;

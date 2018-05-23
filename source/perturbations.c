@@ -2581,6 +2581,10 @@ int perturb_prepare_output(struct background * pba,
                 class_store_columntitle(ppt->scalar_titles,tmp,_TRUE_);
                 sprintf(tmp,"delta_p_over_rho_fld[%d]",n);
                 class_store_columntitle(ppt->scalar_titles,tmp,_TRUE_);
+                sprintf(tmp,"cs2[%d]",n);
+                class_store_columntitle(ppt->scalar_titles,tmp,_TRUE_);
+                sprintf(tmp,"ca2[%d]",n);
+                class_store_columntitle(ppt->scalar_titles,tmp,_TRUE_);
 
             }
             else{
@@ -4367,7 +4371,7 @@ int perturb_initial_conditions(struct precision * ppr,
               // // cs2=fabs(w_fld);
               // // cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2)); //Old w_fld_parametrization
               // cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
-              if(a<pba->a_c[n] && ppt->cs2_and_ca2_switch == _TRUE_){
+              if(a<pba->a_c[n] && ppt->cs2_switch == _TRUE_){
                 cs2 =1;
               }
               else{
@@ -4384,10 +4388,12 @@ int perturb_initial_conditions(struct precision * ppr,
             // if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
             //   if(a > 3*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
             // }
+            // printf("%e %e %e\n", cs2,w_fld,pba->n_pheno_axion[n]);
             ppw->pv->y[ppw->pv->index_pt_delta_fld+n] = - ktau_two/4.*(1.+w_fld)*(4.-3.*cs2)/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC: curvature
             ppw->pv->y[ppw->pv->index_pt_delta_p_over_rho_fld+n] = 0; /* will be automatically assigned later*/ //TBC: curvature
             if(ppt->use_big_theta_fld == _TRUE_) ppw->pv->y[ppw->pv->index_pt_big_theta_fld+n] = - (1+w_fld)*k*ktau_three/4.*cs2/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared;
             else ppw->pv->y[ppw->pv->index_pt_theta_fld+n] = - k*ktau_three/4.*cs2/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC:curvature
+
           }
 
           /* if use_ppf == _TRUE_, y[ppw->pv->index_pt_Gamma_fld] will be automatically set to zero, and this is what we want (although one could probably work out some small nonzero initial conditions: TODO) */
@@ -5551,7 +5557,7 @@ int perturb_total_stress_energy(
   double delta_rho_scf, delta_p_scf, psi;
   double c_gamma_k_H_square;
   double Gamma_prime_plus_a_prime_over_a_Gamma, alpha=0., s2sq=1.;
-
+  double center, width, cs2before, ca2before, cs2after, ca2after, z,a_over_ac;
   /** - wavenumber and scale factor related quantities */
 
   a = ppw->pvecback[pba->index_bg_a];
@@ -5815,51 +5821,72 @@ int perturb_total_stress_energy(
 
     /* fluid contribution */
     if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_) {
-      for(n = 0; n<pba->n_fld; n++){
-        // if(pba->w_free_function_table_is_log == _FALSE_ && 1./a -1 > pba->w_free_function_logz_interpolation_above_z)pba->w_free_function_table_is_log = _TRUE_;
-        // else if(pba->w_free_function_table_is_log == _TRUE_ && 1./a -1 < pba->w_free_function_logz_interpolation_above_z)pba->w_free_function_table_is_log = _FALSE_;
-        // printf("in perturb sources %d\n", pba->w_free_function_table_is_log);
 
-        // printf("pba->w_free_function_table_is_log %d\n", pba->w_free_function_table_is_log);
+      for(n = 0; n<pba->n_fld; n++){
+
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
-        // if(pba->w_free_function_from_file == _TRUE_){
-        //   w_fld+=0.01;
-        // }
+
         if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
           w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
           ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
         }
         else if(pba->w_free_function_file_is_ca2 == _TRUE_){
           ca2 = dw_over_da_fld; //we store already ca2 in the file
-          // ca2 = 0;
-          // printf("a %e ca2 %e\n", a,ca2);
         }
         else{
           w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
           ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
         }
-        // if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
+
         if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
-          // cs2=fabs(w_fld);
-          // cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2)); //Old w_fld_parametrization
-          // cs2 = (2*a2*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2)/(2*a2*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2);
-          if(a<pba->a_c[n] && ppt->cs2_and_ca2_switch == _TRUE_){
-            cs2 =1;
-            ca2 = -7./3;
+          //assign cs2
+          if(a<pba->a_c[n] && ppt->cs2_switch == _TRUE_){
+            cs2 = pba->cs2_fld; //default is 1
           }
           else{
             if(ppt->cs2_is_1 == _TRUE_){
               cs2=1;
             }
             else {
-              // printf("%e %e\n",pba->n_pheno_axion[n], pba->omega_axion[n]);
               cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
             }
-            w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-            ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
           }
+
+          //assign ca2
+          if(a<pba->a_c[n] && ppt->ca2_switch == _TRUE_){
+            center = 3*(1/pba->a_c[n]-1);
+            z = 1/a-1;
+            width = center/2;//found to work well at capturing the sharp transition
+            ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+            a_over_ac = a/pba->a_c[n];
+            ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                  /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+            ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+          }
+          else{
+
+            //real formula should be ca2=w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a; It is find to be unstable numerically because w_prime and 1+w goes to 0.
+            a_over_ac = a/pba->a_c[n];
+            ca2 = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                  /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+          }
+
+          //smooth transition, kept for comparison.
+          center = 3*(1/pba->a_c[n]-1);
+          // z = 1/a-1;
+          // width = 2*center/100;//found to work well at capturing the sharp transition
+          // cs2before = 1;
+          // ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+          // cs2after = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
+          // w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+          // ca2after = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+          // cs2 = (cs2before - cs2after)*(tanh((z - center)/width) + 1)/2 + cs2after;
+          // ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+
         }
         else cs2 = pba->cs2_fld;
+
+
         if (pba->use_ppf == _FALSE_) {
           ppw->delta_rho_fld[n] = ppw->pvecback[pba->index_bg_rho_fld+n]*y[ppw->pv->index_pt_delta_fld+n];
           if(ppt->use_big_theta_fld == _TRUE_){
@@ -5893,28 +5920,6 @@ int perturb_total_stress_energy(
 
         ppw->delta_rho += ppw->delta_rho_fld[n];
         ppw->rho_plus_p_theta += ppw->rho_plus_p_theta_fld[n];
-        // if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
-        if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
-          // cs2=fabs(w_fld);
-          // cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2)); //Old w_fld_parametrization
-          // cs2 = (2*a2*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2)/(2*a2*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2);
-          if(a<pba->a_c[n] && ppt->cs2_and_ca2_switch == _TRUE_){
-            cs2 =1;
-            ca2 = -7./3;
-          }
-          else{
-            if(ppt->cs2_is_1 == _TRUE_){
-              cs2=1;
-            }
-            else {
-              cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
-            }
-            w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-            ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
-          }
-        }
-        else cs2=pba->cs2_fld;
-
         ppw->delta_p += cs2 * ppw->delta_rho_fld[n];
 
       }
@@ -6687,11 +6692,13 @@ int perturb_print_variables(double tau,
   /** - ncdm sector ends */
   double phi=0.,psi=0.,alpha=0.;
   double delta_temp=0., delta_chi=0.;
-  double w_fld,dw_over_da_fld,integral_fld,w_prime_fld,cs2,ca2;
+  double w_fld,dw_over_da_fld,integral_fld,w_prime_fld;
+  double *cs2=NULL,*ca2=NULL;
   double a,a2,H,a_prime_over_a;
   int idx,index_q, storeidx;
   double *dataptr;
   double *Gamma_fld;
+  double center, width, cs2before, ca2before, cs2after, z, ca2after,a_over_ac;
 
   /** - rename structure fields (just to avoid heavy notations) */
 
@@ -6722,6 +6729,8 @@ int perturb_print_variables(double tau,
     if(pba->use_ppf == _FALSE_){
       class_alloc(delta_fld, sizeof(double)*pba->n_fld,error_message);
       class_alloc(delta_p_over_rho_fld, sizeof(double)*pba->n_fld,error_message);
+      class_alloc(cs2, sizeof(double)*pba->n_fld,error_message);
+      class_alloc(ca2, sizeof(double)*pba->n_fld,error_message);
       if(ppt->use_big_theta_fld == _TRUE_){
         class_alloc(big_theta_fld, sizeof(double)*pba->n_fld,error_message);
       }
@@ -6812,58 +6821,81 @@ int perturb_print_variables(double tau,
     if(pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_){
       if (pba->has_fld == _TRUE_ && pba->use_ppf == _FALSE_) {
         for(n = 0; n<pba->n_fld; n++){
-          class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
-          // if(pba->w_free_function_from_file == _TRUE_){
-          //   w_fld+=0.01;
-          // }
-          // if(w_fld==-1) w_fld += 0.3;
-          if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
-            w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-            ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
-          }
-          else if(pba->w_free_function_file_is_ca2 == _TRUE_){
-            ca2 = dw_over_da_fld; //we store already ca2 in the file
-            // ca2 = 0;
-            // printf("a %e ca2 %e\n", a,ca2);
+
+        class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
+
+        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
+          w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+          ca2[n] = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+        }
+        else if(pba->w_free_function_file_is_ca2 == _TRUE_){
+          ca2[n] = dw_over_da_fld; //we store already ca2 in the file
+        }
+        else{
+          w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+          ca2[n] = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+        }
+
+        if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
+          //assign cs2
+          if(a<pba->a_c[n] && ppt->cs2_switch == _TRUE_){
+            cs2[n] = pba->cs2_fld; //default is 1
           }
           else{
-            w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-            ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
-          }
-
-          // if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
-          if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
-            // cs2=fabs(w_fld);
-            // cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2)); //Old w_fld_parametrization
-            // cs2 = (2*a2*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2)/(2*a2*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2);
-            if(a<pba->a_c[n] && ppt->cs2_and_ca2_switch == _TRUE_){
-              cs2 =1;
-              ca2 = -7./3;
-            }
-            else{
-              if(ppt->cs2_is_1 == _TRUE_){
-                cs2=1;
-              }
-              else {
-                cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
-              }
-              w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-              ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
-            }
-          }
-          else cs2 = pba->cs2_fld;
-            delta_fld[n] = y[ppw->pv->index_pt_delta_fld+n];
-            if(ppt->use_big_theta_fld == _TRUE_) {
-              big_theta_fld[n] = y[ppw->pv->index_pt_big_theta_fld+n];
-              delta_p_over_rho_fld[n] = cs2*delta_fld[n]+3*a_prime_over_a*(cs2-ca2)*big_theta_fld[n]/k2;
+            if(ppt->cs2_is_1 == _TRUE_){
+              cs2[n]=1;
             }
             else {
-              theta_fld[n] = y[ppw->pv->index_pt_theta_fld+n];
-              delta_p_over_rho_fld[n] = cs2*delta_fld[n]+3*a_prime_over_a*(1+w_fld)*(cs2-ca2)*theta_fld[n]/k2;
+              cs2[n] = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
             }
-
           }
+
+          //assign ca2
+          if(a<pba->a_c[n] && ppt->ca2_switch == _TRUE_){
+            center = 3*(1/pba->a_c[n]-1);
+            z = 1/a-1;
+            width = center/2;//found to work well at capturing the sharp transition
+            ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+            a_over_ac = a/pba->a_c[n];
+            ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                  /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+            ca2[n] = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+          }
+          else{
+
+            //real formula should be ca2=w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a; It is find to be unstable numerically because w_prime and 1+w goes to 0.
+            a_over_ac = a/pba->a_c[n];
+            ca2[n] = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                  /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+          }
+
+          //smooth transition, kept for comparison.
+          // center = 1/pba->a_c[n]-1;
+          // z = 1/a-1;
+          // width = 2*center/100;//found to work well at capturing the sharp transition
+          // cs2before = 1;
+          // ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+          // cs2after = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
+          // w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+          // ca2after = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+          // cs2 = (cs2before - cs2after)*(tanh((z - center)/width) + 1)/2 + cs2after;
+          // ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+
         }
+        else cs2[n] = pba->cs2_fld;
+
+        delta_fld[n] = y[ppw->pv->index_pt_delta_fld+n];
+        if(ppt->use_big_theta_fld == _TRUE_) {
+          big_theta_fld[n] = y[ppw->pv->index_pt_big_theta_fld+n];
+          delta_p_over_rho_fld[n] = cs2[n]*delta_fld[n]+3*a_prime_over_a*(cs2[n]-ca2[n])*big_theta_fld[n]/k2;
+        }
+        else {
+          theta_fld[n] = y[ppw->pv->index_pt_theta_fld+n];
+          delta_p_over_rho_fld[n] = cs2[n]*delta_fld[n]+3*a_prime_over_a*(1+w_fld)*(cs2[n]-ca2[n])*theta_fld[n]/k2;
+        }
+
+      }
+    }
       if (pba->has_fld == _TRUE_ && pba->use_ppf == _TRUE_) {
         for(n = 0; n<pba->n_fld; n++){
         Gamma_fld[n] = y[ppw->pv->index_pt_Gamma_fld+n];
@@ -7028,57 +7060,79 @@ int perturb_print_variables(double tau,
 
       if (pba->has_fld == _TRUE_  && pba->use_ppf == _FALSE_ && pba->fld_has_perturbations == _TRUE_){
         for(n = 0; n<pba->n_fld; n++){
+
           class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
-          // if(pba->w_free_function_from_file == _TRUE_){
-          //   w_fld+=0.01;
-          // }
-          // if(w_fld==-1) w_fld += 0.3;
+
           if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
             w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-            ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+            ca2[n] = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
           }
           else if(pba->w_free_function_file_is_ca2 == _TRUE_){
-            ca2 = dw_over_da_fld; //we store already ca2 in the file
-            // ca2 = 0;
-            // printf("a %e ca2 %e\n", a,ca2);
+            ca2[n] = dw_over_da_fld; //we store already ca2 in the file
           }
           else{
             w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-            ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
-            // printf("here %e %e %e\n",w_fld,w_prime_fld,dw_over_da_fld);
+            ca2[n] = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
           }
-          // if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
+
           if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
-            // cs2=fabs(w_fld);
-            // cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2)); //Old w_fld_parametrization
-            // cs2 = (2*a2*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2)/(2*a2*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2);
-            if(a<pba->a_c[n] && ppt->cs2_and_ca2_switch == _TRUE_){
-              cs2 =1;
-              ca2 = -7./3;
+            //assign cs2
+            if(a<pba->a_c[n] && ppt->cs2_switch == _TRUE_){
+              cs2[n] = pba->cs2_fld; //default is 1
             }
             else{
               if(ppt->cs2_is_1 == _TRUE_){
-                cs2=1;
+                cs2[n]=1;
               }
               else {
-                cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
+                cs2[n] = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
               }
-              w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-              ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
             }
+
+            //assign ca2
+            if(a<pba->a_c[n] && ppt->ca2_switch == _TRUE_){
+              center = 3*(1/pba->a_c[n]-1);
+              z = 1/a-1;
+              width = center/2;//found to work well at capturing the sharp transition
+              ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+              a_over_ac = a/pba->a_c[n];
+              ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                    /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+              ca2[n] = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+            }
+            else{
+
+              //real formula should be ca2=w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a; It is find to be unstable numerically because w_prime and 1+w goes to 0.
+              a_over_ac = a/pba->a_c[n];
+              ca2[n] = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                    /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+            }
+
+            //smooth transition, kept for comparison.
+            // center = 1/pba->a_c[n]-1;
+            // z = 1/a-1;
+            // width = 2*center/100;//found to work well at capturing the sharp transition
+            // cs2before = 1;
+            // ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+            // cs2after = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
+            // w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+            // ca2after = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+            // cs2 = (cs2before - cs2after)*(tanh((z - center)/width) + 1)/2 + cs2after;
+            // ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+
           }
-          else cs2 = pba->cs2_fld;
+          else cs2[n] = pba->cs2_fld;
 
           // printf("cs2 %e ca2/ %e a %e k %e\n",cs2,ca2,a,k);
           delta_fld[n] += alpha*(-3.0*H*(1.0+w_fld));
 
           if(ppt->use_big_theta_fld == _TRUE_) {
             big_theta_fld[n]+=(1+w_fld)*k*k*alpha;
-            delta_p_over_rho_fld[n] = cs2*delta_fld[n]+3*a_prime_over_a*(cs2-ca2)*big_theta_fld[n]/k2;
+            delta_p_over_rho_fld[n] = cs2[n]*delta_fld[n]+3*a_prime_over_a*(cs2[n]-ca2[n])*big_theta_fld[n]/k2;
           }
           else{
             theta_fld[n] += k*k*alpha;
-            delta_p_over_rho_fld[n] = cs2*delta_fld[n]+3*a_prime_over_a*(1+w_fld)*(cs2-ca2)*theta_fld[n]/k2;
+            delta_p_over_rho_fld[n] = cs2[n]*delta_fld[n]+3*a_prime_over_a*(1+w_fld)*(cs2[n]-ca2[n])*theta_fld[n]/k2;
           }
         }
       }
@@ -7226,6 +7280,8 @@ int perturb_print_variables(double tau,
         class_store_double(dataptr, theta_fld[n], _TRUE_, storeidx);
       }
       class_store_double(dataptr, delta_p_over_rho_fld[n], _TRUE_, storeidx);
+      class_store_double(dataptr, cs2[n], _TRUE_, storeidx);
+      class_store_double(dataptr, ca2[n], _TRUE_, storeidx);
       }
     }
     else if(pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_ && pba->use_ppf == _TRUE_){
@@ -7447,7 +7503,7 @@ int perturb_derivs(double tau,
   /* for use with fluid (fld): */
   double w_fld,dw_over_da_fld,w_prime_fld,integral_fld;
   int n;
-  double width,center,z,cs2before,cs2after;
+  double center, width, cs2before, ca2before, cs2after, ca2after, z,a_over_ac;
   /* for use with non-cold dark matter (ncdm): */
   int index_q,n_ncdm,idx;
   double q,epsilon,dlnf0_dlnq,qk_div_epsilon;
@@ -7854,117 +7910,139 @@ int perturb_derivs(double tau,
     if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_) {
       for(n = 0; n<pba->n_fld; n++){
       if (pba->use_ppf == _FALSE_){
+            /** - ----> factors w, w_prime, adiabatic sound speed ca2 (all three background-related),
+                plus actual sound speed in the fluid rest frame cs2 */
+              // printf("in perturb derivs %d\n", pba->w_free_function_table_is_log);
 
-        /** - ----> factors w, w_prime, adiabatic sound speed ca2 (all three background-related),
-            plus actual sound speed in the fluid rest frame cs2 */
-          // printf("in perturb derivs %d\n", pba->w_free_function_table_is_log);
+              class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
 
-        class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld,n), pba->error_message, ppt->error_message);
-        // if(pba->w_free_function_from_file == _TRUE_){
-        //   w_fld+=0.00001;
-        // }
-        // if(w_fld==-1) w_fld += 0.3;
-        if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
-          w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-          ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
-        }
-        else if(pba->w_free_function_file_is_ca2 == _TRUE_){
-          ca2 = dw_over_da_fld; //we store already ca2 in the file
-          // ca2 = 0;
-          // printf("a %e ca2 %e\n", a,ca2);
-        }
-        else{
-          w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-          ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
-        }
-        // else ca2 = w_fld;
-        // if(pba->w_fld_parametrization == pheno_axion && ppt->cs2_is_w == _TRUE_){
-        if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
-          // // cs2=fabs(w_fld);
-          // // cs2 = k2/(4*pow(pba->m_fld[n],2)*a2)/(1+k2/(4*pow(pba->m_fld[n],2)*a2)); //Old w_fld_parametrization
-          // cs2 = (2*a2*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2)/(2*a2*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k2);
-          // printf("here %e %e %e\n",pba->m_fld[n],pba->omega_axion[n],pba->n_pheno_axion[n]);
-          if(a<pba->a_c[n] && ppt->cs2_and_ca2_switch == _TRUE_){
-            cs2 =1;
-            ca2 = -7./3;
-          }
-          else{
-            if(ppt->cs2_is_1 == _TRUE_){
-              cs2=1;
+              if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
+                w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+                ca2 = w_fld - w_prime_fld / 3. / a_prime_over_a; //we store already w_prime_fld/(1+w)
+              }
+              else if(pba->w_free_function_file_is_ca2 == _TRUE_){
+                ca2 = dw_over_da_fld; //we store already ca2 in the file
+              }
+              else{
+                w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+                ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+              }
+
+              if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
+                //assign cs2
+                if(a<pba->a_c[n] && ppt->cs2_switch == _TRUE_){
+                  cs2 = pba->cs2_fld; //default is 1
+                }
+                else{
+                  if(ppt->cs2_is_1 == _TRUE_){
+                    cs2=1;
+                  }
+                  else {
+                    cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
+                  }
+                }
+
+                //assign ca2
+                if(a<pba->a_c[n] && ppt->ca2_switch == _TRUE_){
+                  center = 3*(1/pba->a_c[n]-1);
+                  z = 1/a-1;
+                  width = center/2;//found to work well at capturing the sharp transition
+                  ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+                  a_over_ac = a/pba->a_c[n];
+                  ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                        /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+                  ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+                }
+                else{
+
+                  //real formula should be ca2=w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a; It is find to be unstable numerically because w_prime and 1+w goes to 0.
+                  a_over_ac = a/pba->a_c[n];
+                  ca2 = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                        /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+                }
+
+                //smooth transition, kept for comparison.
+                // center = 1/pba->a_c[n]-1;
+                // z = 1/a-1;
+                // width = 2*center/100;//found to work well at capturing the sharp transition
+                // cs2before = 1;
+                // ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+                // cs2after = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
+                // w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
+                // ca2after = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+                // cs2 = (cs2before - cs2after)*(tanh((z - center)/width) + 1)/2 + cs2after;
+                // ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+
+              }
+              else cs2 = pba->cs2_fld;
+
+
+            // printf("k %e a %e 1+w %e dw %e dw/1+w %e cs2 %e ca2 %e n %d\n",k,a,1+w_fld,w_prime_fld,w_prime_fld/(1+w_fld),cs2,ca2,n);
+
+
+            /** - ----> fluid density */
+            dy[pv->index_pt_delta_fld+n] = -3.*(cs2-w_fld)*a_prime_over_a*y[pv->index_pt_delta_fld+n];
+
+
+            if(ppt->use_big_theta_fld == _TRUE_){
+              dy[pv->index_pt_delta_fld+n] +=
+              -(y[pv->index_pt_big_theta_fld+n]+(1+w_fld)*metric_continuity)
+              -9.*(cs2-ca2)*a_prime_over_a*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]/k2;
             }
             else {
-              cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
+              dy[pv->index_pt_delta_fld+n] +=
+              -(1+w_fld)*(y[pv->index_pt_theta_fld+n]+metric_continuity)
+              -9.*(1+w_fld)*(cs2-ca2)*a_prime_over_a*a_prime_over_a*y[pv->index_pt_theta_fld+n]/k2;
             }
-            w_prime_fld = dw_over_da_fld * a_prime_over_a * a;
-            ca2 = w_fld - w_prime_fld / 3. / (1.+w_fld) / a_prime_over_a;
+            /* Original equation */
+            // dy[pv->index_pt_delta_fld+n] =
+            //   -(1+w_fld)*(y[pv->index_pt_theta_fld+n]+metric_continuity)
+            //   -3.*(cs2-w_fld)*a_prime_over_a*y[pv->index_pt_delta_fld+n]
+            //   -9.*(1+w_fld)*(cs2-ca2)*a_prime_over_a*a_prime_over_a*y[pv->index_pt_theta_fld+n]/k2;
+
+            /** - ----> fluid velocity */
+          if(ppt->use_big_theta_fld == _TRUE_){
+            dy[pv->index_pt_big_theta_fld+n] = /* fluid velocity */
+              -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
+              +cs2*k2*y[pv->index_pt_delta_fld+n]
+              +(1+w_fld)*metric_euler;
+              dy[pv->index_pt_big_theta_fld+n]+= 3*a_prime_over_a*(w_fld-ca2)*y[pv->index_pt_big_theta_fld+n];
+
+           //  // printf("%e %e \n",a,w_prime_fld/(1+w_fld));
+           //  dy[pv->index_pt_big_theta_fld+n] = /* fluid velocity */
+           //    -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
+           //    +cs2*k2*y[pv->index_pt_delta_fld+n]
+           //    +(1+w_fld)*metric_euler;
+           //  if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
+           //    dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld;//in reality w_prime_fld is w_prime_fld/(1+w_fld), more stable
+           //  }
+           //  else {
+           //    // if(w_prime_fld/(1+w_fld)>0.1)w_prime_fld=0;
+           //    dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld/(1+w_fld);
+           //  }
+           //  printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
+           // printf("%d  w_fld %e wprime %e dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n",ppt->use_big_theta_fld, w_fld,w_prime_fld,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
           }
-        }
-        else cs2 = pba->cs2_fld;
+          else {
+            dy[pv->index_pt_theta_fld+n] = /* fluid velocity */
+              -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_theta_fld+n]
+              +cs2*k2/(1.+w_fld)*y[pv->index_pt_delta_fld+n]
+              +metric_euler;
 
+            // printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_theta_fld+n] %e y[pv->index_pt_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_theta_fld+n],y[pv->index_pt_theta_fld+n]);
+          }
 
-        // printf("k %e a %e 1+w %e dw %e dw/1+w %e cs2 %e ca2 %e n %d\n",k,a,1+w_fld,w_prime_fld,w_prime_fld/(1+w_fld),cs2,ca2,n);
+          /** - ----> fluid pressure */
+          dy[pv->index_pt_delta_p_over_rho_fld+n] = 0; //will be computed later
 
+          }
 
-        /** - ----> fluid density */
-        dy[pv->index_pt_delta_fld+n] = -3.*(cs2-w_fld)*a_prime_over_a*y[pv->index_pt_delta_fld+n];
-
-
-        if(ppt->use_big_theta_fld == _TRUE_){
-          dy[pv->index_pt_delta_fld+n] +=
-          -(y[pv->index_pt_big_theta_fld+n]+(1+w_fld)*metric_continuity)
-          -9.*(cs2-ca2)*a_prime_over_a*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]/k2;
-        }
         else {
-          dy[pv->index_pt_delta_fld+n] +=
-          -(1+w_fld)*(y[pv->index_pt_theta_fld+n]+metric_continuity)
-          -9.*(1+w_fld)*(cs2-ca2)*a_prime_over_a*a_prime_over_a*y[pv->index_pt_theta_fld+n]/k2;
+          dy[pv->index_pt_Gamma_fld+n] = ppw->Gamma_prime_fld[n]; /* Gamma variable of PPF formalism */
         }
-        /* Original equation */
-        // dy[pv->index_pt_delta_fld+n] =
-        //   -(1+w_fld)*(y[pv->index_pt_theta_fld+n]+metric_continuity)
-        //   -3.*(cs2-w_fld)*a_prime_over_a*y[pv->index_pt_delta_fld+n]
-        //   -9.*(1+w_fld)*(cs2-ca2)*a_prime_over_a*a_prime_over_a*y[pv->index_pt_theta_fld+n]/k2;
-
-        /** - ----> fluid velocity */
-      if(ppt->use_big_theta_fld == _TRUE_){
-        dy[pv->index_pt_big_theta_fld+n] = /* fluid velocity */
-          -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
-          +cs2*k2*y[pv->index_pt_delta_fld+n]
-          +(1+w_fld)*metric_euler;
-          dy[pv->index_pt_big_theta_fld+n]+= 3*a_prime_over_a*(w_fld-ca2)*y[pv->index_pt_big_theta_fld+n];
-
-        // // printf("%e %e \n",a,w_prime_fld/(1+w_fld));
-        // dy[pv->index_pt_big_theta_fld+n] = /* fluid velocity */
-        //   -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_big_theta_fld+n]
-        //   +cs2*k2*y[pv->index_pt_delta_fld+n]
-        //   +(1+w_fld)*metric_euler;
-        // if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
-        //   dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld;//in reality w_prime_fld is w_prime_fld/(1+w_fld), more stable
-        // }
-        // else {
-        //   // if(w_prime_fld/(1+w_fld)>0.1)w_prime_fld=0;
-        //   dy[pv->index_pt_big_theta_fld+n]+= y[pv->index_pt_big_theta_fld+n]*w_prime_fld/(1+w_fld);
-        // }
-        // printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
-       // printf("%d  w_fld %e wprime %e dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_big_theta_fld+n] %e y[pv->index_pt_big_theta_fld+n] %e \n",ppt->use_big_theta_fld, w_fld,w_prime_fld,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_big_theta_fld+n],y[pv->index_pt_big_theta_fld+n]);
-      }
-      else {
-        dy[pv->index_pt_theta_fld+n] = /* fluid velocity */
-          -(1.-3.*cs2)*a_prime_over_a*y[pv->index_pt_theta_fld+n]
-          +cs2*k2/(1.+w_fld)*y[pv->index_pt_delta_fld+n]
-          +metric_euler;
-
-        // printf("here n %d dy[pv->index_pt_delta_fld+n] %e y[pv->index_pt_delta_fld+n] %e dy[pv->index_pt_theta_fld+n] %e y[pv->index_pt_theta_fld+n] %e \n", n,dy[pv->index_pt_delta_fld+n],y[pv->index_pt_delta_fld+n], dy[pv->index_pt_theta_fld+n],y[pv->index_pt_theta_fld+n]);
       }
 
-      /** - ----> fluid pressure */
-      dy[pv->index_pt_delta_p_over_rho_fld+n] = 0; //will be computed later
 
-      }
-      else {
-        dy[pv->index_pt_Gamma_fld+n] = ppw->Gamma_prime_fld[n]; /* Gamma variable of PPF formalism */
-      }
-      }
     }
 
     /** - ---> scalar field (scf) */
