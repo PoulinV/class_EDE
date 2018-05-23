@@ -1302,7 +1302,7 @@ int input_read_parameters(
                                                        errmsg),
                            errmsg,errmsg);
 
-               pba->Theta_initial_fld[0]/=pba->alpha_fld[0];
+               // pba->Theta_initial_fld[0]/=pba->alpha_fld[0];
                class_alloc(pba->a_c,sizeof(double)*pba->n_fld,pba->error_message);
                class_read_double("a_c_to_shoot",pba->a_c[0]);
                class_alloc(pba->Omega_many_fld,sizeof(double)*pba->n_fld,pba->error_message);
@@ -4345,7 +4345,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
       //shooting only working for a single fluid!!
       // A = ba.m_fld[0]*p*sqrt(n*sin_initial)*pow(1-cos_initial,(n-1)/2)/sqrt(2*(3*p+1));
       // A = ba.m_fld[0]*p*sqrt(n*sin_initial)*pow(1-cos_initial,(n-1)/2)/sqrt(2*(3*p+1));
-      xc=sqrt((1-F)*(6*p+2)*ba.Theta_initial_fld[0]/(n*fabs(sin_initial)))*pow(1-cos_initial,(1-n)/2)/ba.m_fld[0];
+      xc=sqrt((1-F)*(6*p+2)*ba.Theta_initial_fld[0]/(n*sin_initial))*pow(1-cos_initial,(1-n)/2)/ba.m_fld[0];
       A = p/xc;
       // A = 1./4*ba.m_fld[0]*ba.m_fld[0]*ba.n_pheno_axion[0]*pow(1-cos(ba.Theta_initial_fld[0]),ba.n_pheno_axion[0]-1)*fabs(1-ba.n_pheno_axion[0]*cos(ba.Theta_initial_fld[0])-ba.n_pheno_axion[0]);
       // output[i] = (Omega_m*pow(ba.a_c[0]*0.62,-3)+Omega_r*pow(ba.a_c[0]*0.62,-4)+ba.Omega0_lambda+ba.Omega_fld_ac[0]-A)/A;
@@ -4405,7 +4405,7 @@ int input_get_guess(double *xguess,
   struct lensing le;          /* for lensed spectra */
   struct output op;           /* for output files */
   int i;
-  double Omega_m, Omega_r, A,p,F=7./8.,sin_initial,cos_initial,xc;
+  double Omega_m, Omega_r, A,p,F=7./8.,sin_initial,cos_initial,xc,x1,x2,p1,p2,A1,A2,xc1,xc2;
 
   double Omega_M, a_decay, gamma, Omega0_dcdmdr=1.0;
   int index_guess;
@@ -4528,27 +4528,31 @@ int input_get_guess(double *xguess,
       break;
 
     case m_fld:
-      if(ba.m_fld[0] > 1e5){
-        p = 0.5;
-      }
-      else{
-        p = 2./3;
-      }
+      p1 = 1./2;
+      p2 = 2./3;
       sin_initial = sin(ba.Theta_initial_fld[0]);
       cos_initial = cos(ba.Theta_initial_fld[0]);
-      xc=sqrt((1-F)*(6*p+2)*ba.Theta_initial_fld[0]/(ba.n_pheno_axion[0]*fabs(sin_initial)))*pow(1-cos_initial,(1-ba.n_pheno_axion[0])/2)/ba.m_fld[0];
-      A = p/xc;
-
-      // A = 1./4*ba.m_fld[0]*ba.m_fld[0]*ba.n_pheno_axion[0]*pow(1-cos(ba.Theta_initial_fld[0]),ba.n_pheno_axion[0]-1)*fabs(1-ba.n_pheno_axion[0]*cos(ba.Theta_initial_fld[0])-ba.n_pheno_axion[0]);
       Omega_m = ba.Omega0_cdm+ba.Omega0_b;
       Omega_r = ba.Omega0_g+ba.Omega0_ur;
-      if(ba.m_fld[0] > 1e5){
-        xguess[index_guess] = pow(Omega_r/A,1./4);
-      }
-      else{
-        xguess[index_guess] = pow(Omega_m/A,1./3);
-      }
-      dxdy[index_guess] = 0.1*xguess[index_guess];
+
+      xc1=sqrt((1-F)*(6*p1+2)*ba.Theta_initial_fld[0]/(ba.n_pheno_axion[0]*sin_initial))*pow(1-cos_initial,(1-ba.n_pheno_axion[0])/2)/ba.m_fld[0];
+      A1 = p1/xc1;
+      x1=pow(Omega_r/A1,1./4);
+
+      xc2=sqrt((1-F)*(6*p2+2)*ba.Theta_initial_fld[0]/(ba.n_pheno_axion[0]*sin_initial))*pow(1-cos_initial,(1-ba.n_pheno_axion[0])/2)/ba.m_fld[0];
+      A2 = p2/xc2;
+      x2=pow(Omega_m/A2,1./3);
+
+      if(Omega_r*pow(x1,4)<Omega_m*pow(x2,3)) xguess[index_guess] = x1;
+      else xguess[index_guess] = x2;
+
+      // if(ba.m_fld[0] > 1e5){
+      //   xguess[index_guess] = pow(Omega_r/A,1./4);
+      // }
+      // else{
+      //   xguess[index_guess] = pow(Omega_m/A,1./3);
+      // }
+      dxdy[index_guess] = xguess[index_guess]/10;
       break;
     }
     //printf("xguess = %g\n",xguess[index_guess]);
@@ -4583,9 +4587,10 @@ int input_find_root(double *xzero,
                                errmsg),
                  errmsg, errmsg);
   (*fevals)++;
-  printf("x1= %g, f1= %g\n",x1,f1);
 
   dx = 1.5*f1*dxdy;
+  printf("x1= %g, f1= %g dxdy %e\n",x1,f1,dxdy);
+
   /** - Do linear hunt for boundaries */
   for (iter=1; iter<=15; iter++){
     //x2 = x1 + search_dir*dx;
