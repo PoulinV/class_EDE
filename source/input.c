@@ -262,7 +262,7 @@ int input_init(
                                                    errmsg),
                  errmsg, errmsg);
       if (aux_flag == _TRUE_){
-        //printf("Found target: %s\n",target_namestrings[index_target]);
+        printf("Found target: %s\n",target_namestrings[index_target]);
         target_indices[unknown_parameters_size] = index_target;
         fzw.required_computation_stage = MAX(fzw.required_computation_stage,target_cs[index_target]);
         unknown_parameters_size++;
@@ -4172,9 +4172,9 @@ int input_try_unknown_parameters(double * unknown_parameter,
   struct nonlinear nl;        /* for non-linear spectra */
   struct lensing le;          /* for lensed spectra */
   struct output op;           /* for output files */
-  int i;
+  int i,n;
   double rho_dcdm_today, rho_dr_today;
-  double Omega_m, Omega_r, A;
+  double Omega_m, Omega_r, A,F,xc;
   double cos_initial,sin_initial,p;
   struct fzerofun_workspace * pfzw;
   int input_verbose;
@@ -4331,21 +4331,28 @@ int input_try_unknown_parameters(double * unknown_parameter,
     case m_fld:
       Omega_m = ba.Omega0_cdm+ba.Omega0_b;
       Omega_r = ba.Omega0_g+ba.Omega0_ur;
-      // n = ba.n_pheno_axion[0];
-      // sin_initial = sin(ba.Theta_initial_fld[0]);
-      // cos_initial = cos(ba.Theta_initial_fld[0]);
-      // if(Omega_m*pow(ba.a_c[0],-3)>Omega_r*pow(ba.a_c[0],-4)){
-      //   p=2./3;
-      // }
-      // else{
-      //   p=1./2;
-      // }
+      n = ba.n_pheno_axion[0];
+      printf("n %d sin(ba.Theta_initial_fld[0]) %e ba.Theta_initial_fld[0] %e\n", n,sin(ba.Theta_initial_fld[0]),ba.Theta_initial_fld[0]);
+      sin_initial = sin(ba.Theta_initial_fld[0]);
+      cos_initial = cos(ba.Theta_initial_fld[0]);
+      if(Omega_m*pow(ba.a_c[0],-3)>Omega_r*pow(ba.a_c[0],-4)){
+        p=2./3;
+      }
+      else{
+        p=1./2;
+      }
+      F=7./8;
       //shooting only working for a single fluid!!
       // A = ba.m_fld[0]*p*sqrt(n*sin_initial)*pow(1-cos_initial,(n-1)/2)/sqrt(2*(3*p+1));
-      A = 1./4*ba.m_fld[0]*ba.m_fld[0]*ba.n_pheno_axion[0]*pow(1-cos(ba.Theta_initial_fld[0]),ba.n_pheno_axion[0]-1)*fabs(1-ba.n_pheno_axion[0]*cos(ba.Theta_initial_fld[0])-ba.n_pheno_axion[0]);
-      output[i] = (Omega_m*pow(ba.a_c[0]*0.62,-3)+Omega_r*pow(ba.a_c[0]*0.62,-4)+ba.Omega0_lambda+ba.Omega_fld_ac[0]-A)/A;
-      // output[i] = (Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4)+ba.Omega0_lambda+ba.Omega_fld_ac[0]-A)/A;
-      printf("output[i] %e A %e Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4) %e\n", output[i],A,Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4));
+      // A = ba.m_fld[0]*p*sqrt(n*sin_initial)*pow(1-cos_initial,(n-1)/2)/sqrt(2*(3*p+1));
+      xc=sqrt((1-F)*(6*p+2)*ba.Theta_initial_fld[0]/(n*fabs(sin_initial)))*pow(1-cos_initial,(1-n)/2)/ba.m_fld[0];
+      A = p/xc;
+      // A = 1./4*ba.m_fld[0]*ba.m_fld[0]*ba.n_pheno_axion[0]*pow(1-cos(ba.Theta_initial_fld[0]),ba.n_pheno_axion[0]-1)*fabs(1-ba.n_pheno_axion[0]*cos(ba.Theta_initial_fld[0])-ba.n_pheno_axion[0]);
+      // output[i] = (Omega_m*pow(ba.a_c[0]*0.62,-3)+Omega_r*pow(ba.a_c[0]*0.62,-4)+ba.Omega0_lambda+ba.Omega_fld_ac[0]-A)/A;
+      output[i] = (sqrt(Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4))-A)/A;
+      printf("output[i] %e A*A %e Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4) %e\n", output[i],A*A,Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4));
+      // if(output[i]>1)output[i]=1;
+
       break;
     }
   }
@@ -4398,7 +4405,7 @@ int input_get_guess(double *xguess,
   struct lensing le;          /* for lensed spectra */
   struct output op;           /* for output files */
   int i;
-  double Omega_m, Omega_r, A;
+  double Omega_m, Omega_r, A,p,F=7./8.,sin_initial,cos_initial,xc;
 
   double Omega_M, a_decay, gamma, Omega0_dcdmdr=1.0;
   int index_guess;
@@ -4521,14 +4528,25 @@ int input_get_guess(double *xguess,
       break;
 
     case m_fld:
-      A = 1./4*ba.m_fld[0]*ba.m_fld[0]*ba.n_pheno_axion[0]*pow(1-cos(ba.Theta_initial_fld[0]),ba.n_pheno_axion[0]-1)*fabs(1-ba.n_pheno_axion[0]*cos(ba.Theta_initial_fld[0])-ba.n_pheno_axion[0]);
+      if(ba.m_fld[0] > 1e5){
+        p = 0.5;
+      }
+      else{
+        p = 2./3;
+      }
+      sin_initial = sin(ba.Theta_initial_fld[0]);
+      cos_initial = cos(ba.Theta_initial_fld[0]);
+      xc=sqrt((1-F)*(6*p+2)*ba.Theta_initial_fld[0]/(ba.n_pheno_axion[0]*fabs(sin_initial)))*pow(1-cos_initial,(1-ba.n_pheno_axion[0])/2)/ba.m_fld[0];
+      A = p/xc;
+
+      // A = 1./4*ba.m_fld[0]*ba.m_fld[0]*ba.n_pheno_axion[0]*pow(1-cos(ba.Theta_initial_fld[0]),ba.n_pheno_axion[0]-1)*fabs(1-ba.n_pheno_axion[0]*cos(ba.Theta_initial_fld[0])-ba.n_pheno_axion[0]);
       Omega_m = ba.Omega0_cdm+ba.Omega0_b;
       Omega_r = ba.Omega0_g+ba.Omega0_ur;
       if(ba.m_fld[0] > 1e5){
-        xguess[index_guess] = pow(Omega_r/A,1./4)/2;
+        xguess[index_guess] = pow(Omega_r/A,1./4);
       }
       else{
-        xguess[index_guess] = pow(Omega_m/A,1./3)/2;
+        xguess[index_guess] = pow(Omega_m/A,1./3);
       }
       dxdy[index_guess] = 0.1*xguess[index_guess];
       break;
@@ -4613,7 +4631,7 @@ int input_find_root(double *xzero,
   class_call(class_fzero_ridder(input_fzerofun_1d,
                                 x1,
                                 x2,
-                                1e-15*MAX(fabs(x1),fabs(x2)),
+                                1e-5*MAX(fabs(x1),fabs(x2)),
                                 pfzw,
                                 &f1,
                                 &f2,
