@@ -3483,7 +3483,7 @@ int input_default_params(
   pba->w_free_function_logz_interpolation_above_z = 1e30; //arbitrarily large number, no log interpolation in the default case.
   pba->w_free_function_table_is_log = _FALSE_;
   pba->w_free_function_interpolation_is_linear = _TRUE_; //default: we linearly interpolate rho and rho'. Found to be better to avoid weird behavior at low-z.
-
+  pba->w_free_function_file_is_ca2 = _FALSE_;
   pba->Omega0_fld = 0.;
   pba->a_today = 1.;
   pba->w0_fld=-1.;

@@ -1157,16 +1157,17 @@ int background_init(
           p = 2./3;
         }
 
-          if((n-1+n*cos_initial)>0){
-              signArg = 1.;
-          }
-          else{
-              signArg =-1.;
-          }
-
-
         cos_initial = cos(pba->Theta_initial_fld[i]);
         sin_initial = sin(pba->Theta_initial_fld[i]);
+
+        if((n-1+n*cos_initial)>0){
+            signArg = 1.;
+        }
+        else{
+            signArg =-1.;
+        }
+
+
         n = pba->n_pheno_axion[i];
         wn = (n-1)/(n+1);
 
