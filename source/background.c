@@ -1328,6 +1328,7 @@ int background_free_input(
   }
   if(pba->w_fld_parametrization = pheno_axion){
     free(pba->m_fld);
+    free(pba->n_pheno_axion);
     free(pba->alpha_fld);
     free(pba->Omega_many_fld);
     free(pba->Theta_initial_fld);
