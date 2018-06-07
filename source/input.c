@@ -262,7 +262,7 @@ int input_init(
                                                    errmsg),
                  errmsg, errmsg);
       if (aux_flag == _TRUE_){
-        printf("Found target: %s\n",target_namestrings[index_target]);
+        // printf("Found target: %s\n",target_namestrings[index_target]);
         target_indices[unknown_parameters_size] = index_target;
         fzw.required_computation_stage = MAX(fzw.required_computation_stage,target_cs[index_target]);
         unknown_parameters_size++;
@@ -4332,7 +4332,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
       Omega_m = ba.Omega0_cdm+ba.Omega0_b;
       Omega_r = ba.Omega0_g+ba.Omega0_ur;
       n = ba.n_pheno_axion[0];
-      printf("n %d sin(ba.Theta_initial_fld[0]) %e ba.Theta_initial_fld[0] %e\n", n,sin(ba.Theta_initial_fld[0]),ba.Theta_initial_fld[0]);
+      // printf("n %d sin(ba.Theta_initial_fld[0]) %e ba.Theta_initial_fld[0] %e\n", n,sin(ba.Theta_initial_fld[0]),ba.Theta_initial_fld[0]);
       sin_initial = sin(ba.Theta_initial_fld[0]);
       cos_initial = cos(ba.Theta_initial_fld[0]);
       if(Omega_m*pow(ba.a_c[0],-3)>Omega_r*pow(ba.a_c[0],-4)){
@@ -4350,7 +4350,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
       // A = 1./4*ba.m_fld[0]*ba.m_fld[0]*ba.n_pheno_axion[0]*pow(1-cos(ba.Theta_initial_fld[0]),ba.n_pheno_axion[0]-1)*fabs(1-ba.n_pheno_axion[0]*cos(ba.Theta_initial_fld[0])-ba.n_pheno_axion[0]);
       // output[i] = (Omega_m*pow(ba.a_c[0]*0.62,-3)+Omega_r*pow(ba.a_c[0]*0.62,-4)+ba.Omega0_lambda+ba.Omega_fld_ac[0]-A)/A;
       output[i] = (sqrt(Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4))-A)/A;
-      printf("output[i] %e A*A %e Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4) %e\n", output[i],A*A,Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4));
+      // printf("output[i] %e A*A %e Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4) %e\n", output[i],A*A,Omega_m*pow(ba.a_c[0],-3)+Omega_r*pow(ba.a_c[0],-4));
       // if(output[i]>1)output[i]=1;
 
       break;
@@ -4440,7 +4440,7 @@ int input_get_guess(double *xguess,
       /** - Update pb to reflect guess */
       ba.h = xguess[index_guess];
       ba.H0 = ba.h *  1.e5 / _c_;
-      printf("xguess[index_guess] here %e\n", xguess[index_guess]);
+      // printf("xguess[index_guess] here %e\n", xguess[index_guess]);
       break;
     case Omega_dcdmdr:
       Omega_M = ba.Omega0_cdm+ba.Omega0_dcdmdr+ba.Omega0_b;
@@ -4580,7 +4580,7 @@ int input_find_root(double *xzero,
   /** - Fisrt we do our guess */
   class_call(input_get_guess(&x1, &dxdy, pfzw, errmsg),
              errmsg, errmsg);
-       printf("x1= %g\n",x1);
+       // printf("x1= %g\n",x1);
   class_call(input_fzerofun_1d(x1,
                                pfzw,
                                &f1,
@@ -4589,7 +4589,7 @@ int input_find_root(double *xzero,
   (*fevals)++;
 
   dx = 1.5*f1*dxdy;
-  printf("x1= %g, f1= %g dxdy %e\n",x1,f1,dxdy);
+  // printf("x1= %g, f1= %g dxdy %e\n",x1,f1,dxdy);
 
   /** - Do linear hunt for boundaries */
   for (iter=1; iter<=15; iter++){
@@ -4604,8 +4604,8 @@ int input_find_root(double *xzero,
     for (iter2=1; iter2 <= 3; iter2++) {
       return_function = input_fzerofun_1d(x2,pfzw,&f2,errmsg);
       (*fevals)++;
-      printf("x2= %g, f2= %g\n",x2,f2);
-      fprintf(stderr,"iter2=%d\n",iter2);
+      // printf("x2= %g, f2= %g\n",x2,f2);
+      // fprintf(stderr,"iter2=%d\n",iter2);
 
       if (return_function ==_SUCCESS_) {
         break;

@@ -1145,7 +1145,7 @@ int background_init(
       pba->Omega_many_fld[0] = 2*pba->Omega_fld_ac[0]/(pow(pba->a_c[0],-3*wn-3)+1);
       pba->Omega0_lambda -= pba->Omega_many_fld[0]; // we want a flat universe today.
       pba->omega_axion[0] = pba->H0*sqrt(_PI_)*pow(2,-(n*n+1)/(2*n))*pow(2*pow(pba->a_c[0],3*(1+wn))*pba->Omega_fld_ac[0]/(1+pow(pba->a_c[0],3*(1+wn))),(n-1)/(2*n))*gsl_sf_gamma((n+1.)/(2*n))*pow(pba->m_fld[0]*pba->alpha_fld[0],1./n)/(pba->alpha_fld[0]*gsl_sf_gamma(1+1./(2*n)));
-      printf("pba->Omega_many_fld[0] %e (pow(pba->a_c[0],-3*(wn+1))+1) %e wn %e\n",pba->Omega_many_fld[0],pow(pba->a_c[0],-3*wn-3)+1);
+      // printf("pba->Omega_many_fld[0] %e (pow(pba->a_c[0],-3*(wn+1))+1) %e wn %e\n",pba->Omega_many_fld[0],pow(pba->a_c[0],-3*wn-3)+1);
     }
     else{
       for(i =0 ;i<pba->n_fld;i++){
@@ -1178,8 +1178,8 @@ int background_init(
 
         F1_1 = gsl_sf_hyperg_0F1(1./2*(1+3*p),signArg);
         F1_2 = gsl_sf_hyperg_0F1(3./2*(1+p),signArg);
-        // Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]);
-        Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3));
+        Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]);
+        // Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3));
 
         xc = p/Eac;
         f = 7./8;
@@ -1199,7 +1199,9 @@ int background_init(
         pba->omega_axion[i] = pba->H0*pba->m_fld[i]*pow(1-cos_initial,0.5*(n-1))*Gac;
 
 
+
         // printf("pba->m_fld %e pba->alpha_fld %e pba->omega_axion[i] %e Gac  %e pba->a_c[i] %e \n", pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac,pba->a_c[i]);
+        // printf("%e  %e pba->omega_axion[i] %e Gac  %e pba->a_c[i] %e \n", pba->m_fld[i]*1.5e-33,pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac,pba->a_c[i]);
       }
     }
 
