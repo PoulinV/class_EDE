@@ -7420,10 +7420,18 @@ int perturb_print_variables(double tau,
     free(delta_p_over_delta_rho_ncdm);
   }
   if (pba->has_fld == _TRUE_ && pba->fld_has_perturbations == _TRUE_){
-    free(delta_fld);
-    if(ppt->use_big_theta_fld == _TRUE_) free(big_theta_fld);
-    else free(theta_fld);
+    if(pba->use_ppf == _FALSE_){
+      free(delta_fld);
+      free(delta_p_over_rho_fld);
+      free(cs2);
+      free(ca2);
+      if(ppt->use_big_theta_fld == _TRUE_) free(big_theta_fld);
+      else free(theta_fld);
+    }
+    else free(Gamma_fld);
   }
+
+
 
   return _SUCCESS_;
 

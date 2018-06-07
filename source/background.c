@@ -1326,6 +1326,15 @@ int background_free_input(
     if (pba->scf_parameters != NULL)
       free(pba->scf_parameters);
   }
+  if(pba->w_fld_parametrization = pheno_axion){
+    free(pba->m_fld);
+    free(pba->alpha_fld);
+    free(pba->Omega_many_fld);
+    free(pba->Theta_initial_fld);
+    free(pba->Omega_fld_ac);
+    free(pba->omega_axion);
+    free(pba->a_c);
+  }
 
   return _SUCCESS_;
 }

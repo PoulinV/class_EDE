@@ -1304,7 +1304,7 @@ int input_read_parameters(
 
                // pba->Theta_initial_fld[0]/=pba->alpha_fld[0];
                class_alloc(pba->a_c,sizeof(double)*pba->n_fld,pba->error_message);
-               class_read_double("a_c_to_shoot",pba->a_c[0]);
+               // class_read_double("a_c_to_shoot",pba->a_c[0]);
                class_alloc(pba->Omega_many_fld,sizeof(double)*pba->n_fld,pba->error_message);
                class_alloc(pba->Omega_fld_ac,sizeof(double)*pba->n_fld,pba->error_message);
                class_alloc(pba->omega_axion,sizeof(double)*pba->n_fld,pba->error_message);
