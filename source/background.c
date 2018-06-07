@@ -1159,7 +1159,10 @@ int background_init(
 
         cos_initial = cos(pba->Theta_initial_fld[i]);
         sin_initial = sin(pba->Theta_initial_fld[i]);
+        // printf("%e %e %e \n",cos_initial,sin_initial,p);
 
+        n = pba->n_pheno_axion[i];
+        wn = (n-1)/(n+1);
         if((n-1+n*cos_initial)>0){
             signArg = 1.;
         }
@@ -1167,9 +1170,6 @@ int background_init(
             signArg =-1.;
         }
 
-
-        n = pba->n_pheno_axion[i];
-        wn = (n-1)/(n+1);
 
 
         // if(pba->Omega0_fld!=0 || pba->Omega_many_fld[i] != 0) Omega0_fld = pba->Omega0_fld;
