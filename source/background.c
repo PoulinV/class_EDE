@@ -1265,12 +1265,12 @@ int background_free(
   free(pba->d2tau_dz2_table);
   free(pba->background_table);
   free(pba->d2background_dtau2_table);
-  // if(pba->w_fld_parametrization == w_free_function){
-  //   free(pba->w_free_function_at_knot);
-  //   free(pba->w_free_function_value_at_knot);
-  //   free(pba->w_free_function_redshift_at_knot);
-  //   if(pba->w_free_function_interpolation_is_linear == _FALSE_)free(pba->w_free_function_dd_at_knot);
-  // }
+  if(pba->w_fld_parametrization == w_free_function){
+    free(pba->w_free_function_at_knot);
+    free(pba->w_free_function_value_at_knot);
+    free(pba->w_free_function_redshift_at_knot);
+    if(pba->w_free_function_interpolation_is_linear == _FALSE_)free(pba->w_free_function_dd_at_knot);
+  }
   err = background_free_input(pba);
 
   return err;
@@ -1326,7 +1326,7 @@ int background_free_input(
     if (pba->scf_parameters != NULL)
       free(pba->scf_parameters);
   }
-  if(pba->w_fld_parametrization = pheno_axion){
+  if(pba->w_fld_parametrization == pheno_axion){
     free(pba->m_fld);
     free(pba->n_pheno_axion);
     free(pba->alpha_fld);

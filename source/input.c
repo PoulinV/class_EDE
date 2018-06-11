@@ -3607,7 +3607,7 @@ int input_default_params(
   // TK added GDM parameters to perturbation structure because that's how it's coded now.
   pba->ceff2_gdm = 0.;
   pba->cvis2_gdm = 0.;
-
+  pba->w_free_function_from_file = _FALSE_;
   ppt->z_max_pk=0.;
 
   ppt->selection_num=1;
