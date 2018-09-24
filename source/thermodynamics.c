@@ -649,7 +649,6 @@ int thermodynamics_init(
     pth->thermodynamics_table[index_tau*pth->th_size+pth->index_th_g] = g;
 
     /** - ---> compute variation rate */
-    pth->thermodynamics_table[index_tau*pth->th_size+pth->index_th_dkappa] += 1e-10;
     class_test(pth->thermodynamics_table[index_tau*pth->th_size+pth->index_th_dkappa] == 0.,
                pth->error_message,
                "variation rate diverges");

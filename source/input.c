@@ -1143,9 +1143,18 @@ int input_read_parameters(
        }
        else if((strstr(string1,"pheno_axion") != NULL)) {
          pba->w_fld_parametrization = pheno_axion;
+         class_call(parser_read_double(pfc,"Omega_Lambda",&param1,&flag1,errmsg),
+                    errmsg,
+                    errmsg);
          class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
                     errmsg,
                     errmsg);
+          if (flag1 == _TRUE_){
+            pba->Omega0_lambda = param1;
+            Omega_tot += pba->Omega0_lambda;
+            pba->Omega0_fld = 1. - pba->Omega0_k - Omega_tot;
+            flag2 = _TRUE_;
+          }
          if(flag2==_FALSE_){
 
                  class_call(parser_read_list_of_doubles(pfc,
@@ -1233,9 +1242,14 @@ int input_read_parameters(
                    }
 
                   }
-                  }
+            }
             else{
               pba->n_fld = 1;
+              class_alloc(pba->Omega_many_fld,sizeof(double)*pba->n_fld,pba->error_message);
+              class_alloc(pba->Omega_fld_ac,sizeof(double)*pba->n_fld,pba->error_message);
+              pba->Omega_many_fld[0] = pba->Omega0_fld;
+              pba->Omega_fld_ac[0] = 0;
+
             }
             if(pba->n_fld!=0){
               class_call(parser_read_list_of_doubles(pfc,
@@ -1273,16 +1287,19 @@ int input_read_parameters(
                  class_alloc(pba->omega_axion,sizeof(double)*pba->n_fld,pba->error_message);
                  for(n = 0; n < pba->n_fld; n++){
                    wn = (pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1);
+                   printf("here yo\n");
                    if(pba->Omega_many_fld[n] == 0){
                      pba->Omega_many_fld[n] = 2*pba->Omega_fld_ac[n]/(pow(pba->a_today/pba->a_c[n],3*(wn+1))+1);
                      Omega_tot += pba->Omega_many_fld[n];
                     }
                     else if(pba->Omega_fld_ac[n] == 0){
+
                       pba->Omega_fld_ac[n] = pba->Omega_many_fld[n]*(pow(pba->a_today/pba->a_c[n],3*(wn+1))+1)/2;
                     }
                     // printf("pba->Omega_many_fld[n] %e pba->Omega_many_fld_ac %e\n", pba->Omega_many_fld[n],pba->Omega_fld_ac[n]);
 
                   }
+
               }
               else{
                 class_test(pba->n_fld>1,errmsg,"You try to shoot for a_c with more than one field. This is not yet implemented sorry. Please adapt your param file.");
@@ -1513,127 +1530,131 @@ int input_read_parameters(
 
 
 
+if(pba->Omega0_lambda>0 || pba->Omega0_fld > 0){
+  /** do nothing, these fields have already been atributed. */
+}
+else{
 
-
-
-
-  /** - Omega_0_lambda (cosmological constant), Omega0_fld (dark energy fluid), Omega0_scf (scalar field) */
-
-  class_call(parser_read_double(pfc,"Omega_Lambda",&param1,&flag1,errmsg),
-             errmsg,
-             errmsg);
-  class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
-             errmsg,
-             errmsg);
-  class_call(parser_read_double(pfc,"Omega_scf",&param3,&flag3,errmsg),
-             errmsg,
-             errmsg);
-
-  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)),
-             errmsg,
-             "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_scf is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
-
-  /** - --> (flag3 == _FALSE_) || (param3 >= 0.) explained:
-   *  it means that either we have not read Omega_scf so we are ignoring it
-   *  (unlike lambda and fld!) OR we have read it, but it had a
-   *  positive value and should not be used for filling.
-   *  We now proceed in two steps:
-   *  1) set each Omega0 and add to the total for each specified component.
-   *  2) go through the components in order {lambda, fld, scf} and
-   *     fill using first unspecified component.
-  */
-
-  /* Step 1 */
-  if (flag1 == _TRUE_){
-    pba->Omega0_lambda = param1;
-    Omega_tot += pba->Omega0_lambda;
-  }
-  if (flag2 == _TRUE_){
-    pba->Omega0_fld = param2;
-    Omega_tot += pba->Omega0_fld;
-    if(pba->Omega0_fld!=0)pba->n_fld = 1;
-  }
-  if ((flag3 == _TRUE_) && (param3 >= 0.)){
-    pba->Omega0_scf = param3;
-    Omega_tot += pba->Omega0_scf;
-  }
-  /* Step 2 */
-  if (flag1 == _FALSE_) {
-    //Fill with Lambda
-    pba->Omega0_lambda= 1. - pba->Omega0_k - Omega_tot;
-    if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_Lambda = %e\n",pba->Omega0_lambda);
-  }
-  else if (flag2 == _FALSE_) {
-    // Fill up with fluid
-    pba->Omega0_fld = 1. - pba->Omega0_k - Omega_tot;
-    if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_fld = %e\n",pba->Omega0_fld);
-  }
-  else if ((flag3 == _TRUE_) && (param3 < 0.)){
-    // Fill up with scalar field
-    pba->Omega0_scf = 1. - pba->Omega0_k - Omega_tot;
-    if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_scf = %e\n",pba->Omega0_scf);
-  }
-
-  /*
-  fprintf(stderr,"%e %e %e %e %e\n",
-          pba->Omega0_lambda,
-          pba->Omega0_fld,
-          pba->Omega0_scf,
-          pba->Omega0_k,
-          Omega_tot);
-  */
-
-  /** - Test that the user have not specified Omega_scf = -1 but left either
-      Omega_lambda or Omega_fld unspecified:*/
-  class_test(((flag1 == _FALSE_)||(flag2 == _FALSE_)) && ((flag3 == _TRUE_) && (param3 < 0.)),
-             errmsg,
-             "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field, so you have to specify both Omega_lambda and Omega_fld in the .ini file");
-
-
-
-  /* Additional SCF parameters: */
-  if (pba->Omega0_scf != 0.){
-    /** - Read parameters describing scalar field potential */
-    class_call(parser_read_list_of_doubles(pfc,
-                                           "scf_parameters",
-                                           &(pba->scf_parameters_size),
-                                           &(pba->scf_parameters),
-                                           &flag1,
-                                           errmsg),
-               errmsg,errmsg);
-    class_read_int("scf_tuning_index",pba->scf_tuning_index);
-    class_test(pba->scf_tuning_index >= pba->scf_parameters_size,
+    /** - Omega_0_lambda (cosmological constant), Omega0_fld (dark energy fluid), Omega0_scf (scalar field) */
+    class_call(parser_read_double(pfc,"Omega_Lambda",&param1,&flag1,errmsg),
                errmsg,
-               "Tuning index scf_tuning_index = %d is larger than the number of entries %d in scf_parameters. Check your .ini file.",pba->scf_tuning_index,pba->scf_parameters_size);
-    /** - Assign shooting parameter */
-    class_read_double("scf_shooting_parameter",pba->scf_parameters[pba->scf_tuning_index]);
-
-    scf_lambda = pba->scf_parameters[0];
-    if ((fabs(scf_lambda) <3.)&&(pba->background_verbose>1))
-      printf("lambda = %e <3 won't be tracking (for exp quint) unless overwritten by tuning function\n",scf_lambda);
-
-    class_call(parser_read_string(pfc,
-                                  "attractor_ic_scf",
-                                  &string1,
-                                  &flag1,
-                                  errmsg),
-                errmsg,
-                errmsg);
-
-    if (flag1 == _TRUE_){
-      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-        pba->attractor_ic_scf = _TRUE_;
-      }
-      else{
-        pba->attractor_ic_scf = _FALSE_;
-        class_test(pba->scf_parameters_size<2,
+               errmsg);
+    class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
                errmsg,
-               "Since you are not using attractor initial conditions, you must specify phi and its derivative phi' as the last two entries in scf_parameters. See explanatory.ini for more details.");
-        pba->phi_ini_scf = pba->scf_parameters[pba->scf_parameters_size-2];
-        pba->phi_prime_ini_scf = pba->scf_parameters[pba->scf_parameters_size-1];
+               errmsg);
+    class_call(parser_read_double(pfc,"Omega_scf",&param3,&flag3,errmsg),
+               errmsg,
+               errmsg);
+
+    class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)),
+               errmsg,
+               "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_scf is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
+
+    /** - --> (flag3 == _FALSE_) || (param3 >= 0.) explained:
+     *  it means that either we have not read Omega_scf so we are ignoring it
+     *  (unlike lambda and fld!) OR we have read it, but it had a
+     *  positive value and should not be used for filling.
+     *  We now proceed in two steps:
+     *  1) set each Omega0 and add to the total for each specified component.
+     *  2) go through the components in order {lambda, fld, scf} and
+     *     fill using first unspecified component.
+    */
+
+    /* Step 1 */
+    if (flag1 == _TRUE_ ){
+      pba->Omega0_lambda = param1;
+      Omega_tot += pba->Omega0_lambda;
+    }
+    if (flag2 == _TRUE_){
+
+      pba->Omega0_fld = param2;
+      Omega_tot += pba->Omega0_fld;
+      if(pba->Omega0_fld!=0)pba->n_fld = 1;
+    }
+    if ((flag3 == _TRUE_) && (param3 >= 0.)){
+      pba->Omega0_scf = param3;
+      Omega_tot += pba->Omega0_scf;
+    }
+    /* Step 2 */
+    if (flag1 == _FALSE_) {
+      //Fill with Lambda
+      pba->Omega0_lambda= 1. - pba->Omega0_k - Omega_tot;
+      if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_Lambda = %e\n",pba->Omega0_lambda);
+    }
+    else if (flag2 == _FALSE_) {
+      // Fill up with fluid
+      pba->Omega0_fld = 1. - pba->Omega0_k - Omega_tot;
+      if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_fld = %e\n",pba->Omega0_fld);
+    }
+    else if ((flag3 == _TRUE_) && (param3 < 0.)){
+      // Fill up with scalar field
+      pba->Omega0_scf = 1. - pba->Omega0_k - Omega_tot;
+      if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_scf = %e\n",pba->Omega0_scf);
+    }
+
+    /*
+    fprintf(stderr,"%e %e %e %e %e\n",
+            pba->Omega0_lambda,
+            pba->Omega0_fld,
+            pba->Omega0_scf,
+            pba->Omega0_k,
+            Omega_tot);
+    */
+
+    /** - Test that the user have not specified Omega_scf = -1 but left either
+        Omega_lambda or Omega_fld unspecified:*/
+    class_test(((flag1 == _FALSE_)||(flag2 == _FALSE_)) && ((flag3 == _TRUE_) && (param3 < 0.)),
+               errmsg,
+               "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field, so you have to specify both Omega_lambda and Omega_fld in the .ini file");
+
+
+
+    /* Additional SCF parameters: */
+    if (pba->Omega0_scf != 0.){
+      /** - Read parameters describing scalar field potential */
+      class_call(parser_read_list_of_doubles(pfc,
+                                             "scf_parameters",
+                                             &(pba->scf_parameters_size),
+                                             &(pba->scf_parameters),
+                                             &flag1,
+                                             errmsg),
+                 errmsg,errmsg);
+      class_read_int("scf_tuning_index",pba->scf_tuning_index);
+      class_test(pba->scf_tuning_index >= pba->scf_parameters_size,
+                 errmsg,
+                 "Tuning index scf_tuning_index = %d is larger than the number of entries %d in scf_parameters. Check your .ini file.",pba->scf_tuning_index,pba->scf_parameters_size);
+      /** - Assign shooting parameter */
+      class_read_double("scf_shooting_parameter",pba->scf_parameters[pba->scf_tuning_index]);
+
+      scf_lambda = pba->scf_parameters[0];
+      if ((fabs(scf_lambda) <3.)&&(pba->background_verbose>1))
+        printf("lambda = %e <3 won't be tracking (for exp quint) unless overwritten by tuning function\n",scf_lambda);
+
+      class_call(parser_read_string(pfc,
+                                    "attractor_ic_scf",
+                                    &string1,
+                                    &flag1,
+                                    errmsg),
+                  errmsg,
+                  errmsg);
+
+      if (flag1 == _TRUE_){
+        if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+          pba->attractor_ic_scf = _TRUE_;
+        }
+        else{
+          pba->attractor_ic_scf = _FALSE_;
+          class_test(pba->scf_parameters_size<2,
+                 errmsg,
+                 "Since you are not using attractor initial conditions, you must specify phi and its derivative phi' as the last two entries in scf_parameters. See explanatory.ini for more details.");
+          pba->phi_ini_scf = pba->scf_parameters[pba->scf_parameters_size-2];
+          pba->phi_prime_ini_scf = pba->scf_parameters[pba->scf_parameters_size-1];
+        }
       }
     }
-  }
+}
+
+
 
   /** (b) assign values to thermodynamics cosmological parameters */
 
