@@ -1287,7 +1287,6 @@ int input_read_parameters(
                  class_alloc(pba->omega_axion,sizeof(double)*pba->n_fld,pba->error_message);
                  for(n = 0; n < pba->n_fld; n++){
                    wn = (pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1);
-                   printf("here yo\n");
                    if(pba->Omega_many_fld[n] == 0){
                      pba->Omega_many_fld[n] = 2*pba->Omega_fld_ac[n]/(pow(pba->a_today/pba->a_c[n],3*(wn+1))+1);
                      Omega_tot += pba->Omega_many_fld[n];
