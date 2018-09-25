@@ -1153,7 +1153,6 @@ int input_read_parameters(
             pba->Omega0_lambda = param1;
             Omega_tot += pba->Omega0_lambda;
             pba->Omega0_fld = 1. - pba->Omega0_k - Omega_tot;
-            flag2 = _TRUE_;
           }
          if(flag2==_FALSE_){
 
@@ -1198,6 +1197,7 @@ int input_read_parameters(
                     if(flag3==_TRUE_)pba->n_fld = int3;
                     if(flag4==_TRUE_)pba->n_fld = int4;
                     if (flag1 == _TRUE_){
+
                       for(n = 0; n < pba->n_fld; n++){
                       class_alloc(pba->Omega_fld_ac,sizeof(double)*pba->n_fld,pba->error_message);
                       pba->Omega_many_fld[n] *= 1/pba->h/pba->h;
