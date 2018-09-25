@@ -1149,7 +1149,7 @@ int input_read_parameters(
          class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
                     errmsg,
                     errmsg);
-          if (flag1 == _TRUE_){
+          if (flag1 == _TRUE_ && flag2 == _TRUE_){
             pba->Omega0_lambda = param1;
             Omega_tot += pba->Omega0_lambda;
             pba->Omega0_fld = 1. - pba->Omega0_k - Omega_tot;
@@ -1207,9 +1207,13 @@ int input_read_parameters(
                     }
                     if(flag2 == _TRUE_ || flag3 == _TRUE_){
                       class_alloc(pba->Omega_fld_ac,sizeof(double)*pba->n_fld,pba->error_message);
+
                       for(n = 0; n < pba->n_fld; n++){
                         if(flag3==_TRUE_){
                           pba->Omega_many_fld[n] = pba->Omega0_cdm*pba->Omega_many_fld[n]/(1-pba->Omega_many_fld[n]);
+                        }
+                        else if(pba->Omega0_lambda == 0.0 && pba->n_fld == 1){
+                          pba->Omega_many_fld[n] = 1. - pba->Omega0_k - Omega_tot; //In that specific case, we ensure that the closure relation is satisfy via Omega_fld.
                         }
                         pba->Omega_fld_ac[n] = 0; //will be attributed later;
                         Omega_tot += pba->Omega_many_fld[n];
