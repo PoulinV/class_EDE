@@ -1149,7 +1149,7 @@ int input_read_parameters(
          class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
                     errmsg,
                     errmsg);
-          if (flag1 == _TRUE_ && flag2 == _TRUE_){
+          if (flag1 == _TRUE_){
             pba->Omega0_lambda = param1;
             Omega_tot += pba->Omega0_lambda;
             pba->Omega0_fld = 1. - pba->Omega0_k - Omega_tot;
