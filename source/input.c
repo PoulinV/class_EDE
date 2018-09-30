@@ -1338,6 +1338,28 @@ int input_read_parameters(
 
 
             }
+
+            class_call(parser_read_string(pfc,
+                                          "axion_is_dark_energy",
+                                          &(string1),
+                                          &(flag1),
+                                          errmsg),
+                       errmsg,
+                       errmsg);
+
+            if (flag1 == _TRUE_) {
+              if ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)) {
+                pba->axion_is_dark_energy = _TRUE_;
+              }
+              else {
+                if ((strstr(string1,"n") != NULL) || (strstr(string1,"N") != NULL)) {
+                  pba->axion_is_dark_energy = _FALSE_;
+                }
+                else {
+                  class_stop(errmsg,"incomprehensible input '%s' for the field 'axion_is_dark_energy'",string1);
+                }
+              }
+            }
        }
        else if((strstr(string1,"pheno_alternative") != NULL)) {
          pba->w_fld_parametrization = pheno_alternative;
@@ -1588,11 +1610,10 @@ int input_read_parameters(
                   errmsg,
                   errmsg);
 
-      if (flag1 == _TRUE_){
-          if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+      if (pba->axion_is_dark_energy == _TRUE_){
               pba->Omega_many_fld[0] += pba->Omega0_lambda;
               pba->Omega0_lambda = 0.0;
-          }
+
       }
     }
     else if (flag2 == _FALSE_) {
@@ -3540,6 +3561,7 @@ int input_default_params(
   pba->c_gamma_over_c_fld = 0.4;
   pba->fld_has_perturbations = _TRUE_;
   pba->axion_is_mu_and_alpha = _FALSE_;
+  pba->axion_is_dark_energy = _FALSE_;
   pba->shooting_failed = _FALSE_;
 
   /** - thermodynamics structure */

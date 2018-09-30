@@ -342,6 +342,7 @@ struct background
   enum w_fld_parametrization w_fld_parametrization;
   int n_fld;
   short axion_is_mu_and_alpha;
+  short axion_is_dark_energy;
   double * m_fld;
   double * alpha_fld;
   double * Theta_initial_fld;
