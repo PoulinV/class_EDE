@@ -1214,6 +1214,7 @@ int input_read_parameters(
                         }
                         else if(pba->Omega0_lambda == 0.0 && pba->n_fld == 1){
                           pba->Omega_many_fld[n] = 1. - pba->Omega0_k - Omega_tot; //In that specific case, we ensure that the closure relation is satisfy via Omega_fld.
+
                         }
                         pba->Omega_fld_ac[n] = 0; //will be attributed later;
                         Omega_tot += pba->Omega_many_fld[n];
@@ -1533,11 +1534,6 @@ int input_read_parameters(
 
 
 
-if(pba->Omega0_lambda>0 || pba->Omega0_fld > 0){
-  /** do nothing, these fields have already been atributed. */
-}
-else{
-
     /** - Omega_0_lambda (cosmological constant), Omega0_fld (dark energy fluid), Omega0_scf (scalar field) */
     class_call(parser_read_double(pfc,"Omega_Lambda",&param1,&flag1,errmsg),
                errmsg,
@@ -1565,8 +1561,9 @@ else{
 
     /* Step 1 */
     if (flag1 == _TRUE_ ){
-      pba->Omega0_lambda = param1;
-      Omega_tot += pba->Omega0_lambda;
+
+        pba->Omega0_lambda = param1;
+        Omega_tot += pba->Omega0_lambda;
     }
     if (flag2 == _TRUE_){
 
@@ -1583,6 +1580,20 @@ else{
       //Fill with Lambda
       pba->Omega0_lambda= 1. - pba->Omega0_k - Omega_tot;
       if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_Lambda = %e\n",pba->Omega0_lambda);
+      class_call(parser_read_string(pfc,
+                                    "axion_is_dark_energy",
+                                    &string1,
+                                    &flag1,
+                                    errmsg),
+                  errmsg,
+                  errmsg);
+
+      if (flag1 == _TRUE_){
+          if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+              pba->Omega_many_fld[0] += pba->Omega0_lambda;
+              pba->Omega0_lambda = 0.0;
+          }
+      }
     }
     else if (flag2 == _FALSE_) {
       // Fill up with fluid
@@ -1655,7 +1666,7 @@ else{
         }
       }
     }
-}
+
 
 
 
