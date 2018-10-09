@@ -530,12 +530,13 @@ int background_w_fld(
         Recfast does not assume anything */
   }
   else if(pba->w_fld_parametrization == pheno_axion){
-    w = (pba->n_pheno_axion[n]-1)/(1+pba->n_pheno_axion[n]); //e.o.s. once the field starts oscillating
-    *w_fld = (1+w)/(1+pow(pba->a_c[n]/a,3*(1+w)))-1+1e-15; //we add 1e-10 to avoid a crashing of the solver. Checked to be totally invisible.
+    if(n<50)w = (pba->n_pheno_axion[n]-1)/(1+pba->n_pheno_axion[n]); //e.o.s. once the field starts oscillating
+    else w =1;
+    *w_fld = (1+w)/(1+pow(pba->a_c[n]/a,3*(1+w)))-1+1e-10; //we add 1e-10 to avoid a crashing of the solver. Checked to be totally invisible.
     // *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
     *dw_over_da_fld = 3*pow(a/pba->a_today,-1-3*(1+w))*pba->a_c[n]/ pba->a_today*(1+w)*(1+w)/pow((1 + pba->a_c[n]/pba->a_today*pow(a/ pba->a_today,-3*(1+w))),2);
     *integral_fld = -(3*(1 + w)*(3*w*log(a/pba->a_today) + log(pow(a/pba->a_today,3) + pow(pba->a_c[n]/ pba->a_today,3)*pow(pba->a_c[n]/a,3*w)))/(3 + 3*w));
-    // if(a<1e-5)printf("%e %e %e %e %e\n",a,*w_fld,*dw_over_da_fld,*integral_fld,pba->n_pheno_axion[n]);
+    // printf("%e %e %e %e %e %e\n",a,w,*w_fld,*dw_over_da_fld,*integral_fld,pba->n_pheno_axion[n]);
   }
   else if(pba->w_fld_parametrization == pheno_alternative){
     z = 1/a-1;
@@ -1191,17 +1192,24 @@ int background_init(
         // pba->omega_axion[i] = pba->H0*sqrt(_PI_)*pow(2,-(n*n+1)/(2*n))*pow(2*pow(pba->a_c[i],3*(1+wn))*Omega_fld_ac/(1+pow(pba->a_c[i],3*(1+wn))),(n-1)/(2*n))*gsl_sf_gamma((n+1.)/(2*n))*pow(pba->m_fld[i]*pba->alpha_fld[i],1./n)/(pba->alpha_fld[i]*gsl_sf_gamma(1+1./(2*n)));
 
 
-        pba->m_fld[i] = pow(1-cos_initial,(1.-n)/2.)*sqrt((1-f)*(6*p+2)*pba->Theta_initial_fld[i]/(n*sin_initial))/xc;
-        pba->alpha_fld[i] = sqrt(6 * pba->Omega_fld_ac[i])/pba->m_fld[i]/pow(1-cos_initial,n/2);
 
-        Gac =sqrt(_PI_)*gsl_sf_gamma((n+1.)/(2*n))/gsl_sf_gamma(1+1./(2*n))*pow(2,-(n*n+1)/(2*n))*pow(3,0.5*(1./n-1))
-        *pow(pba->a_c[i],3-6./(1+n))*pow(pow(pba->a_c[i],6*n/(1+n))+1,0.5*(1./n-1));
+        if(n>50){
+          pba->m_fld[i] = 0;
+          pba->alpha_fld[i] = 0;
+          Gac = 0;
+          pba->omega_axion[i] = 0;
+        }
+        else{
+          pba->m_fld[i] = pow(1-cos_initial,(1.-n)/2.)*sqrt((1-f)*(6*p+2)*pba->Theta_initial_fld[i]/(n*sin_initial))/xc;
+          pba->alpha_fld[i] = sqrt(6 * pba->Omega_fld_ac[i])/pba->m_fld[i]/pow(1-cos_initial,n/2);
+          Gac =sqrt(_PI_)*gsl_sf_gamma((n+1.)/(2*n))/gsl_sf_gamma(1+1./(2*n))*pow(2,-(n*n+1)/(2*n))*pow(3,0.5*(1./n-1))
+          *pow(pba->a_c[i],3-6./(1+n))*pow(pow(pba->a_c[i],6*n/(1+n))+1,0.5*(1./n-1));
+          pba->omega_axion[i] = pba->H0*pba->m_fld[i]*pow(1-cos_initial,0.5*(n-1))*Gac;
+        }
 
-        pba->omega_axion[i] = pba->H0*pba->m_fld[i]*pow(1-cos_initial,0.5*(n-1))*Gac;
 
 
-
-        // printf("pba->Omega0_fld %e m %e alpha %e pba->omega_axion[i] %e Gac  %e pba->a_c[i] %e \n", pba->Omega0_fld,pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac,pba->a_c[i]);
+        // printf("pba->Omega0_fld %e m %e alpha %e pba->omega_axion[i] %e Gac  %e pba->a_c[i] %e \n", Omega0_fld,pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac,pba->a_c[i]);
         // printf("pba->Omega0_fld %e m %e alpha   %e pba->omega_axion[i] %e Gac  %e pba->a_c[i] %e \n",pba->Omega0_fld, pba->m_fld[i]*1.5e-33,pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac,pba->a_c[i]);
       }
     }
