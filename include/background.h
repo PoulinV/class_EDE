@@ -10,8 +10,11 @@
 #include "dei_rkck.h"
 #include "parser.h"
 
+/** list of possible types of spatial curvature */
+
 enum spatial_curvature {flat,open,closed};
 enum w_fld_parametrization {CPL,pheno_axion,w_free_function,pheno_alternative};
+
 /**
  * All background parameters and evolution that other modules need to know.
  *
@@ -162,7 +165,10 @@ struct background
   double Neff; /**< so-called "effective neutrino number", computed at earliest time in interpolation table */
   double Omega0_dcdm; /**< \f$ \Omega_{0 dcdm} \f$: decaying cold dark matter */
   double Omega0_dr; /**< \f$ \Omega_{0 dr} \f$: decay radiation */
-
+  double a_eq;      /**< scale factor at radiation/matter equality */
+  double H_eq;      /**< Hubble rate at radiation/matter equality [Mpc^-1] */
+  double z_eq;      /**< redshift at radiation/matter equality */
+  double tau_eq;    /**< conformal time at radiation/matter equality [Mpc] */
 
   //@}
 
@@ -472,6 +478,10 @@ extern "C" {
                             struct background *pba
                             );
 
+  int background_free_noinput(
+                    struct background *pba
+                    );
+
   int background_indices(
 			 struct background *pba
 			 );
@@ -525,6 +535,11 @@ extern "C" {
 				    double * pvecback,
 				    double * pvecback_integration
 				    );
+
+  int background_find_equality(
+                               struct precision *ppr,
+                               struct background *pba
+                               );
 
   int background_output_titles(struct background * pba,
                                char titles[_MAXTITLESTRINGLENGTH_]
