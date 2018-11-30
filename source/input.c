@@ -513,10 +513,10 @@ int input_read_parameters(
 
   /** - define local variables */
 
-  int flag1,flag2,flag3,flag4;
+  int flag1,flag2,flag3,flag4,flag5;
   double param1,param2,param3;
   int N_ncdm=0,n,entries_read;
-  int int1,int2,int3,int4,fileentries;
+  int int1,int2,int3,int4,int5,fileentries;
   double scf_lambda;
   double fnu_factor;
   double * pointer1;
@@ -535,7 +535,7 @@ int input_read_parameters(
   double n_cor=0.;
   double c_cor=0.;
   double wn;
-  double Omega_tot;
+  double Omega_tot, Omega_tot_ac;
 
   int i;
 
@@ -619,7 +619,7 @@ int input_read_parameters(
     pba->H0 = param2 *  1.e5 / _c_;
     pba->h = param2;
   }
-
+  // printf("pba->H0 %e Mpc\n", pba->H0 );
   /** - Omega_0_g (photons) and T_cmb */
   class_call(parser_read_double(pfc,"T_cmb",&param1,&flag1,errmsg),
              errmsg,
@@ -1185,8 +1185,14 @@ int input_read_parameters(
                                                        &flag4,
                                                        errmsg),
                            errmsg,errmsg);
-
-                  if(flag1 == _TRUE_ || flag2!=_FALSE_ || flag3!=_FALSE_ ||flag4!=_FALSE_  ){
+               class_call(parser_read_list_of_doubles(pfc,
+                                                      "fraction_axion_ac",
+                                                      &int5,
+                                                      &(pba->Omega_fld_ac),
+                                                      &flag5,
+                                                      errmsg),
+                          errmsg,errmsg);
+                  if(flag1 == _TRUE_ || flag2!=_FALSE_ || flag3!=_FALSE_ ||flag4!=_FALSE_ ||flag5!=_FALSE_ ){
 
                     class_test(flag1==_TRUE_&&flag2==_TRUE_,"you have passed both 'Omega_many_fld' and 'omega_many_fld'. Please pass only one of them.",errmsg,errmsg);
                     class_test(flag2==_TRUE_&&flag3==_TRUE_,"you have passed both 'Omega_many_fld' and 'fraction_axion'. Please pass only one of them.",errmsg,errmsg);
@@ -1196,6 +1202,7 @@ int input_read_parameters(
                     if(flag2==_TRUE_)pba->n_fld = int2;
                     if(flag3==_TRUE_)pba->n_fld = int3;
                     if(flag4==_TRUE_)pba->n_fld = int4;
+                    if(flag5==_TRUE_)pba->n_fld = int5;
                     if (flag1 == _TRUE_){
 
                       for(n = 0; n < pba->n_fld; n++){
@@ -1220,10 +1227,10 @@ int input_read_parameters(
                         Omega_tot += pba->Omega_many_fld[n];
                       }
                     }
-                    if(flag4 == _TRUE_){
+                    if(flag4 == _TRUE_ || flag5 == _TRUE_){
                       class_alloc(pba->Omega_many_fld,sizeof(double)*pba->n_fld,pba->error_message);
                       for(n = 0; n < pba->n_fld; n++){
-                          pba->Omega_many_fld[n] = 0;
+                          pba->Omega_many_fld[n] = 0; //will be attributed later;
                       }
                     }
 
@@ -1293,14 +1300,23 @@ int input_read_parameters(
                  for(n = 0; n < pba->n_fld; n++){
                    wn = (pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1);
                    if(pba->Omega_many_fld[n] == 0){
+                     if(flag5 == _TRUE_){
+                          printf("Omega_r %e\n", (pba->Omega0_g+pba->Omega0_ur));
+                         Omega_tot_ac = (pba->Omega0_cdm+pba->Omega0_b)*pow(pba->a_c[n],-3)+(pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[n],-4)+pba->Omega0_lambda;
+                         class_test(pba->Omega_fld_ac[n]==1.0,"you cannot have pba->Omega_fld_ac[n]=1.0!",errmsg,errmsg);
+                         if(pba->Omega_fld_ac[n]!=1.0)pba->Omega_fld_ac[n] = Omega_tot_ac*pba->Omega_fld_ac[n]/(1-pba->Omega_fld_ac[n]);
+                         // printf("%s\n", );
+                     }
                      pba->Omega_many_fld[n] = 2*pba->Omega_fld_ac[n]/(pow(pba->a_today/pba->a_c[n],3*(wn+1))+1);
                      Omega_tot += pba->Omega_many_fld[n];
+                     printf("pba->Omega_many_fld[n] %e\n", pba->Omega_many_fld[n]);
                     }
                     else if(pba->Omega_fld_ac[n] == 0){
-
                       pba->Omega_fld_ac[n] = pba->Omega_many_fld[n]*(pow(pba->a_today/pba->a_c[n],3*(wn+1))+1)/2;
                     }
-                    // printf("pba->Omega_many_fld[n] %e pba->Omega_many_fld_ac %e\n", pba->Omega_many_fld[n],pba->Omega_fld_ac[n]);
+                    Omega_tot_ac = (pba->Omega0_cdm+pba->Omega0_b)*pow(pba->a_c[n],-3)+(pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[n],-4)+pba->Omega0_lambda;
+
+                    printf("pba->Omega_many_fld[n] %e pba->Omega_many_fld_ac %e fac %e \n", pba->Omega_many_fld[n],pba->Omega_fld_ac[n],(pba->Omega_fld_ac[n]/(pba->Omega_fld_ac[n]+Omega_tot_ac)));
 
                   }
 

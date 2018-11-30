@@ -499,7 +499,8 @@ int thermodynamics_init(
 
       pth->thermodynamics_table[index_tau*pth->th_size+pth->index_th_ddkappa] =
                  1./pth->thermodynamics_table[(pth->tt_size-1-index_tau)*pth->th_size+pth->index_th_dkappa]
-                 *(R*R+4./5.*(1.+R))/(1.+R*R)/6.;
+                 // *(R*R+4./5.*(1.+R))/(1.+R*R)/6.;
+                 *(R*R+4./5.*(1.+R))/pow((1.+R),2)/6.;
 
     }
 
@@ -806,6 +807,8 @@ int thermodynamics_init(
     printf("    and sound horizon angle 100*theta_s = %f\n",100.*pth->rs_rec/pth->ra_rec);
     if (pth->compute_damping_scale == _TRUE_) {
       printf("    and with comoving photon damping scale = %f Mpc\n",pth->rd_rec);
+      printf("    or photon damping scale angle 100*theta_d = %f\n",100.*pth->rd_rec/pth->ra_rec);
+      printf("    ratio r_D/r_s = %f\n",pth->rd_rec/pth->rs_rec);
       printf("    or comoving damping wavenumber k_d = %f 1/Mpc\n",2.*_PI_/pth->rd_rec);
     }
     printf(" -> baryon drag stops at z = %f\n",pth->z_d);
@@ -835,6 +838,47 @@ int thermodynamics_init(
              pth->tau_free_streaming);
     }
   }
+
+  // class_call(background_tau_of_z(pba,1/pba->a_c[0]-1,&(pth->tau_d)),
+  //            pba->error_message,
+  //            pth->error_message);
+  class_call(background_tau_of_z(pba,3317.945,&(pth->tau_d)),
+             pba->error_message,
+             pth->error_message);
+
+  class_call(background_at_tau(pba,pth->tau_d, pba->long_info, pba->inter_normal,
+             &last_index_back, pvecback),
+             pba->error_message,
+             pth->error_message)
+  printf("zc %e\n", 1/pba->a_c[0]-1);
+  printf("omega_photon(0) %e\n", pba->Omega0_g*pba->h*pba->h);
+  double rho_ncdm, rho_rad, rho_m;
+  int i;
+  rho_m = pvecback[pba->index_bg_rho_cdm]+pvecback[pba->index_bg_rho_b];
+  rho_rad = pvecback[pba->index_bg_rho_g]+pvecback[pba->index_bg_rho_ur];
+  rho_ncdm = pvecback[pba->index_bg_rho_ur];
+  for(i = 0; i<pba->N_ncdm; i++){
+    rho_ncdm += pvecback[pba->index_bg_rho_ncdm1+i];
+    rho_rad += 3*pvecback[pba->index_bg_p_ncdm1+i];
+  }
+
+  printf("omega_R(ac)/Omega_M(ac) %e\n", rho_rad/rho_m);
+  printf("b/cdm %e\n", pvecback[pba->index_bg_rho_b]/pvecback[pba->index_bg_rho_cdm]);
+  printf("omega_neutrino(ac)/Omega_R(ac) %e\n", rho_ncdm/rho_rad);
+  class_call(background_tau_of_z(pba,0.000001,&(pth->tau_d)),
+             pba->error_message,
+             pth->error_message);
+
+  class_call(background_at_tau(pba,pth->tau_d, pba->long_info, pba->inter_normal,
+             &last_index_back, pvecback),
+             pba->error_message,
+             pth->error_message)
+   rho_ncdm = pvecback[pba->index_bg_rho_ur];
+   for(i = 0; i<pba->N_ncdm; i++){
+     rho_ncdm += pvecback[pba->index_bg_rho_ncdm1+i];
+   }
+   printf("omega_neutrino(0) %e\n", rho_ncdm/pvecback[pba->index_bg_rho_crit]*pba->h*pba->h);
+
 
   free(pvecback);
 

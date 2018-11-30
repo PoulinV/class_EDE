@@ -2157,7 +2157,7 @@ int background_solve(
   /* parameters required to get m_fld when playing with axion */
   double tau_of_ac;
   int n;
-
+  double Omega_m, Omega_r;
   bpaw.pba = pba;
   class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
   bpaw.pvecback = pvecback;
@@ -2389,6 +2389,12 @@ int background_solve(
   if (pba->background_verbose > 0) {
     printf(" -> age = %f Gyr\n",pba->age);
     printf(" -> conformal age = %f Mpc\n",pba->conformal_age);
+    Omega_m = pba->Omega0_b;
+    if(pba->has_cdm == _TRUE_)Omega_m += pba->Omega0_cdm;
+    if(pba->has_dcdm == _TRUE_)Omega_m += pba->Omega0_dcdm;
+    Omega_r = pba->Omega0_g;
+    if(pba->has_ur)Omega_r+=pba->Omega0_ur;
+    printf(" -> matter radiaton equality at z = %f \n",Omega_m/Omega_r);
   }
 
   if (pba->background_verbose > 2) {

@@ -854,6 +854,27 @@ cdef class Class:
         self.compute(["thermodynamics"])
         return self.th.rs_d
 
+    def rs_rec(self):
+        self.compute(["thermodynamics"])
+        return self.th.rs_rec
+
+    def rd_rec(self):
+        self.compute(["thermodynamics"])
+        return self.th.rd_rec
+
+    def da_rec(self):
+        self.compute(["thermodynamics"])
+        return self.th.da_rec
+
+    def z_rec(self):
+        self.compute(["thermodynamics"])
+        return self.th.z_rec
+
+    def theta_s(self):
+        self.compute(["thermodynamics"])
+        return 100.*self.th.rs_rec/self.th.da_rec/(1.+self.th.z_rec)
+
+
     def angular_distance(self, z):
         """
         angular_distance(z)

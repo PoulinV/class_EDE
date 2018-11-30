@@ -2534,6 +2534,7 @@ int perturb_prepare_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles,"theta_b",_TRUE_);
       class_store_columntitle(ppt->scalar_titles,"psi",_TRUE_);
       class_store_columntitle(ppt->scalar_titles,"phi",_TRUE_);
+      class_store_columntitle(ppt->scalar_titles,"phi_prime",_TRUE_);
       /* Perturbed recombination */
       class_store_columntitle(ppt->scalar_titles,"delta_Tb",ppt->has_perturbed_recombination);
       class_store_columntitle(ppt->scalar_titles,"delta_chi",ppt->has_perturbed_recombination);
@@ -3521,7 +3522,6 @@ int perturb_vector_init(
                                           ppw),
                ppt->error_message,
                ppt->error_message);
-
   }
 
   /** - case of switching approximation while a wavenumber is being integrated */
@@ -6690,7 +6690,7 @@ int perturb_print_variables(double tau,
   double factor = 0.0;
   double q,q2,epsilon;
   /** - ncdm sector ends */
-  double phi=0.,psi=0.,alpha=0.;
+  double phi=0.,psi=0.,alpha=0.,phi_prime=0;
   double delta_temp=0., delta_chi=0.;
   double w_fld,dw_over_da_fld,integral_fld,w_prime_fld;
   double *cs2=NULL,*ca2=NULL;
@@ -6911,10 +6911,12 @@ int perturb_print_variables(double tau,
 
       psi = pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a] * alpha + pvecmetric[ppw->index_mt_alpha_prime];
       phi = y[ppw->pv->index_pt_eta] - pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;
+      phi_prime = 0;//for simplicity
     }
     else if (ppt->gauge == newtonian){
       psi = pvecmetric[ppw->index_mt_psi];
       phi = y[ppw->pv->index_pt_phi];
+      phi_prime = pvecmetric[ppw->index_mt_phi_prime];
     }
     else{
       psi = 0.0;
@@ -7223,6 +7225,7 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, theta_b, _TRUE_, storeidx);
     class_store_double(dataptr, psi, _TRUE_, storeidx);
     class_store_double(dataptr, phi, _TRUE_, storeidx);
+    class_store_double(dataptr, phi_prime, _TRUE_, storeidx);
     /* perturbed recombination */
     class_store_double(dataptr, delta_temp, ppt->has_perturbed_recombination, storeidx);
     class_store_double(dataptr, delta_chi, ppt->has_perturbed_recombination, storeidx);
