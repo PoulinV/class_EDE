@@ -28,9 +28,9 @@ rc('text', usetex=True)
 matplotlib.mathtext.rcParams['legend.fontsize']='medium'
 plt.rcParams["figure.figsize"] = [8.0,6.0]
 
-l_TT,err_TT= np.loadtxt("/Users/poulin/Documents/Labo/ProgrammeDarkAges/error_Planck/PlanckerrorsbinnedTT.dat",unpack=True)
-l_EE,err_EE= np.loadtxt("/Users/poulin/Documents/Labo/ProgrammeDarkAges/error_Planck/PlanckerrorsbinnedEE.dat",unpack=True)
-lmin_phiphi,lmax_phiphi,cl_phiphi,err_phiphi= np.loadtxt("/Users/poulin/Documents/Labo/ProgrammeDarkAges/error_Planck/agressive_lensing.csv",unpack=True)
+l_TT,err_TT= np.loadtxt("/Users/poulin/Dropbox/Labo/ProgrammeDarkAges/error_Planck/PlanckerrorsbinnedTT.dat",unpack=True)
+l_EE,err_EE= np.loadtxt("/Users/poulin/Dropbox/Labo/ProgrammeDarkAges/error_Planck/PlanckerrorsbinnedEE.dat",unpack=True)
+lmin_phiphi,lmax_phiphi,cl_phiphi,err_phiphi= np.loadtxt("/Users/poulin/Dropbox/Labo/ProgrammeDarkAges/error_Planck/agressive_lensing.csv",unpack=True)
 
 # In[ ]:
 
@@ -344,7 +344,6 @@ for i in range(var_num):
     M.set({var_name1:var_n,var_name2:var_Omac,
             'format':'camb',
             'w_fld_parametrization':'pheno_axion',
-            'cs2_and_ca2_switch':'no',
             'cs2_is_1':'no',
             'a_c':a_c[i],
             'Theta_initial_fld':3,

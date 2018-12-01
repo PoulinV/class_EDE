@@ -846,38 +846,38 @@ int thermodynamics_init(
              pba->error_message,
              pth->error_message);
 
-  class_call(background_at_tau(pba,pth->tau_d, pba->long_info, pba->inter_normal,
-             &last_index_back, pvecback),
-             pba->error_message,
-             pth->error_message)
-  printf("zc %e\n", 1/pba->a_c[0]-1);
-  printf("omega_photon(0) %e\n", pba->Omega0_g*pba->h*pba->h);
-  double rho_ncdm, rho_rad, rho_m;
-  int i;
-  rho_m = pvecback[pba->index_bg_rho_cdm]+pvecback[pba->index_bg_rho_b];
-  rho_rad = pvecback[pba->index_bg_rho_g]+pvecback[pba->index_bg_rho_ur];
-  rho_ncdm = pvecback[pba->index_bg_rho_ur];
-  for(i = 0; i<pba->N_ncdm; i++){
-    rho_ncdm += pvecback[pba->index_bg_rho_ncdm1+i];
-    rho_rad += 3*pvecback[pba->index_bg_p_ncdm1+i];
-  }
-
-  printf("omega_R(ac)/Omega_M(ac) %e\n", rho_rad/rho_m);
-  printf("b/cdm %e\n", pvecback[pba->index_bg_rho_b]/pvecback[pba->index_bg_rho_cdm]);
-  printf("omega_neutrino(ac)/Omega_R(ac) %e\n", rho_ncdm/rho_rad);
-  class_call(background_tau_of_z(pba,0.000001,&(pth->tau_d)),
-             pba->error_message,
-             pth->error_message);
-
-  class_call(background_at_tau(pba,pth->tau_d, pba->long_info, pba->inter_normal,
-             &last_index_back, pvecback),
-             pba->error_message,
-             pth->error_message)
-   rho_ncdm = pvecback[pba->index_bg_rho_ur];
-   for(i = 0; i<pba->N_ncdm; i++){
-     rho_ncdm += pvecback[pba->index_bg_rho_ncdm1+i];
-   }
-   printf("omega_neutrino(0) %e\n", rho_ncdm/pvecback[pba->index_bg_rho_crit]*pba->h*pba->h);
+  // class_call(background_at_tau(pba,pth->tau_d, pba->long_info, pba->inter_normal,
+  //            &last_index_back, pvecback),
+  //            pba->error_message,
+  //            pth->error_message)
+  // printf("zc %e\n", 1/pba->a_c[0]-1);
+  // printf("omega_photon(0) %e\n", pba->Omega0_g*pba->h*pba->h);
+  // double rho_ncdm, rho_rad, rho_m;
+  // int i;
+  // rho_m = pvecback[pba->index_bg_rho_cdm]+pvecback[pba->index_bg_rho_b];
+  // rho_rad = pvecback[pba->index_bg_rho_g]+pvecback[pba->index_bg_rho_ur];
+  // rho_ncdm = pvecback[pba->index_bg_rho_ur];
+  // for(i = 0; i<pba->N_ncdm; i++){
+  //   rho_ncdm += pvecback[pba->index_bg_rho_ncdm1+i];
+  //   rho_rad += 3*pvecback[pba->index_bg_p_ncdm1+i];
+  // }
+  //
+  // printf("omega_R(ac)/Omega_M(ac) %e\n", rho_rad/rho_m);
+  // printf("b/cdm %e\n", pvecback[pba->index_bg_rho_b]/pvecback[pba->index_bg_rho_cdm]);
+  // printf("omega_neutrino(ac)/Omega_R(ac) %e\n", rho_ncdm/rho_rad);
+  // class_call(background_tau_of_z(pba,0.000001,&(pth->tau_d)),
+  //            pba->error_message,
+  //            pth->error_message);
+  //
+  // class_call(background_at_tau(pba,pth->tau_d, pba->long_info, pba->inter_normal,
+  //            &last_index_back, pvecback),
+  //            pba->error_message,
+  //            pth->error_message)
+  //  rho_ncdm = pvecback[pba->index_bg_rho_ur];
+  //  for(i = 0; i<pba->N_ncdm; i++){
+  //    rho_ncdm += pvecback[pba->index_bg_rho_ncdm1+i];
+  //  }
+  //  printf("omega_neutrino(0) %e\n", rho_ncdm/pvecback[pba->index_bg_rho_crit]*pba->h*pba->h);
 
 
   free(pvecback);

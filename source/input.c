@@ -1008,7 +1008,13 @@ int input_read_parameters(
 
 
      if (flag1 == _TRUE_) {
-
+       /* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+       /* I) One can give an arbitrary function for w, dw, ca   */
+       /* There are several ways of doing so:
+             - one can give a w(z) from a file
+             - one can specify w(z) at several knots;
+             we then use a spline interpolation
+        /* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
        if((strstr(string1,"w_free_function") != NULL)) {
          pba->n_fld = 1;
          pba->w_fld_parametrization = w_free_function;
@@ -1025,7 +1031,10 @@ int input_read_parameters(
             Omega_tot += pba->Omega0_fld; //will be added later if Omega_fld is defined
           }
 
-  if (pba->Omega0_fld != 0.) {
+          if (pba->Omega0_fld != 0.) {
+            /* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+            /* We start by checking if w(z) is given from a file     */
+            /* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
             class_call(parser_read_string(pfc,
                                           "w_free_function_from_file",
@@ -1052,6 +1061,8 @@ int input_read_parameters(
             else{
               pba->w_free_function_from_file = _FALSE_;
             }
+            /* Specifying the format of the file */
+
             class_call(parser_read_string(pfc,
                                           "w_free_function_file_is_dw_over_1_p_w",
                                           &(string2),
@@ -1077,6 +1088,7 @@ int input_read_parameters(
               pba->w_free_function_file_is_dw_over_1_p_w=_FALSE_;
             }
 
+            /* Specifying the format of the file */
             class_call(parser_read_string(pfc,
                                           "w_free_function_file_is_ca2",
                                           &(string2),
@@ -1104,6 +1116,10 @@ int input_read_parameters(
 
             class_read_double("ca2_max",pba->ca2_max);
 
+            /* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+            /* * * * * *     One can give w at some knots   * * * *  */
+            /* * * * * *  we then use a spline interpolation * * * * */
+            /* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
             class_read_double("w_free_function_number_of_knots",pba->w_free_function_number_of_knots);
             double *tmp_w_free_function;
             if(pba->w_free_function_number_of_knots > 0){
@@ -1147,7 +1163,12 @@ int input_read_parameters(
 
             }
        }
+       }
        else if((strstr(string1,"pheno_axion") != NULL)) {
+         /* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+         /* * * *   The phenomenological parametrization  * * * * */
+         /* * * *   of axion-like fields from Poulin et al. * * * */
+         /* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
          pba->w_fld_parametrization = pheno_axion;
          class_call(parser_read_double(pfc,"Omega_Lambda",&param1,&flag1,errmsg),
                     errmsg,
@@ -1161,9 +1182,9 @@ int input_read_parameters(
             pba->Omega0_fld = 1. - pba->Omega0_k - Omega_tot;
           }
          if(flag2==_FALSE_){
-
+                      /* one can specify the axion density in many ways */
                  class_call(parser_read_list_of_doubles(pfc,
-                                                        "omega_many_fld",
+                                                        "omega_many_fld", //physical density today
                                                         &int1,
                                                         &(pba->Omega_many_fld),
                                                         &flag1,
@@ -1173,26 +1194,26 @@ int input_read_parameters(
                  class_call(parser_read_list_of_doubles(pfc,
                                                         "Omega_many_fld",
                                                         &int2,
-                                                        &(pba->Omega_many_fld),
+                                                        &(pba->Omega_many_fld), //fractional density today
                                                         &flag2,
                                                         errmsg),
                             errmsg,errmsg);
                 class_call(parser_read_list_of_doubles(pfc,
-                                                       "fraction_axion",
+                                                       "fraction_axion", //this one is defined w/r to cdm
                                                        &int3,
                                                        &(pba->Omega_many_fld),
                                                        &flag3,
                                                        errmsg),
                            errmsg,errmsg);
                 class_call(parser_read_list_of_doubles(pfc,
-                                                       "Omega_fld_ac",
+                                                       "Omega_fld_ac", //density at ac defined w/r to rho_crit^today.
                                                        &int4,
                                                        &(pba->Omega_fld_ac),
                                                        &flag4,
                                                        errmsg),
                            errmsg,errmsg);
                class_call(parser_read_list_of_doubles(pfc,
-                                                      "fraction_axion_ac",
+                                                      "fraction_axion_ac",//fractional density at a_c.
                                                       &int5,
                                                       &(pba->Omega_fld_ac),
                                                       &flag5,
@@ -1426,10 +1447,13 @@ int input_read_parameters(
 
        }
        else{
+         /* the standard CPL w(a) = w_0 + (1-a)w_a parametrization */
          pba->w_fld_parametrization = CPL;
        }
      }
+
      if(pba->w_fld_parametrization == CPL){
+       /* the standard CPL w(a) = w_0 + (1-a)w_a parametrization */
        class_read_double("w0_fld",pba->w0_fld);
        class_read_double("wa_fld",pba->wa_fld);
        class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
@@ -1444,7 +1468,11 @@ int input_read_parameters(
           pba->n_fld = 1;
         }
      }
+
+     
+
      if(pba->n_fld != 0 ){
+       /* additional parameters if there's an exotic fluid */
        class_call(parser_read_string(pfc,
                                      "fld_has_perturbations",
                                      &(string1),
@@ -1574,12 +1602,6 @@ int input_read_parameters(
         }
       }
      }
-
-
-  }
-
-
-
 
     /** - Omega_0_lambda (cosmological constant), Omega0_fld (dark energy fluid), Omega0_scf (scalar field) */
     class_call(parser_read_double(pfc,"Omega_Lambda",&param1,&flag1,errmsg),
