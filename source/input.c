@@ -1343,7 +1343,7 @@ int input_read_parameters(
                     }
                     Omega_tot_ac = (pba->Omega0_cdm+pba->Omega0_b)*pow(pba->a_c[n],-3)+(pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[n],-4)+pba->Omega0_lambda;
 
-                    printf("pba->Omega_many_fld[n] %e pba->Omega_many_fld_ac %e fac %e \n", pba->Omega_many_fld[n],pba->Omega_fld_ac[n],(pba->Omega_fld_ac[n]/(pba->Omega_fld_ac[n]+Omega_tot_ac)));
+                    // printf("pba->Omega_many_fld[n] %e pba->Omega_many_fld_ac %e fac %e \n", pba->Omega_many_fld[n],pba->Omega_fld_ac[n],(pba->Omega_fld_ac[n]/(pba->Omega_fld_ac[n]+Omega_tot_ac)));
 
                   }
 
@@ -1469,7 +1469,7 @@ int input_read_parameters(
         }
      }
 
-     
+
 
      if(pba->n_fld != 0 ){
        /* additional parameters if there's an exotic fluid */
