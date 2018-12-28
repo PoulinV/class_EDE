@@ -1151,13 +1151,13 @@ int background_init(
     else{
       for(i =0 ;i<pba->n_fld;i++){
 
-        if(pba->a_c[i]<(pba->Omega0_g+pba->Omega0_ur)/(pba->Omega0_b+pba->Omega0_cdm)){
-          p = 1./2;
-        }
-        else{
-          p = 2./3;
-        }
-
+        // if(pba->a_c[i]<(pba->Omega0_g+pba->Omega0_ur)/(pba->Omega0_b+pba->Omega0_cdm)){
+        //   p = 1./2;
+        // }
+        // else{
+        //   p = 2./3;
+        // }
+        p = 1./2;
         cos_initial = cos(pba->Theta_initial_fld[i]);
         sin_initial = sin(pba->Theta_initial_fld[i]);
         // printf("%e %e %e \n",cos_initial,sin_initial,p);
@@ -1180,7 +1180,8 @@ int background_init(
 
         F1_1 = gsl_sf_hyperg_0F1(1./2*(1+3*p),signArg);
         F1_2 = gsl_sf_hyperg_0F1(3./2*(1+p),signArg);
-        Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]);
+        // Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]);
+        Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4));
         // Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3));
 
         xc = p/Eac;
@@ -1205,6 +1206,7 @@ int background_init(
           Gac =sqrt(_PI_)*gsl_sf_gamma((n+1.)/(2*n))/gsl_sf_gamma(1+1./(2*n))*pow(2,-(n*n+1)/(2*n))*pow(3,0.5*(1./n-1))
           *pow(pba->a_c[i],3-6./(1+n))*pow(pow(pba->a_c[i],6*n/(1+n))+1,0.5*(1./n-1));
           pba->omega_axion[i] = pba->H0*pba->m_fld[i]*pow(1-cos_initial,0.5*(n-1))*Gac;
+          // printf("pba->omega_axion[i] %e\n", pba->omega_axion[i]);
         }
 
 
