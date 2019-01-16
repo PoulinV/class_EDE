@@ -1463,9 +1463,11 @@ int input_read_parameters(
          class_call(parser_read_double(pfc,"fraction_axion",&param2,&flag2,errmsg),
                     errmsg,
                     errmsg);
-          pba->Omega0_fld = param2*pba->Omega0_cdm;
-          Omega_tot += pba->Omega0_fld;
-          pba->n_fld = 1;
+          if(flag2==_TRUE_){
+            pba->Omega0_fld = param2*pba->Omega0_cdm;
+            Omega_tot += pba->Omega0_fld;
+            pba->n_fld = 1;
+          }
         }
      }
 

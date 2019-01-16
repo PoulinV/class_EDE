@@ -3223,6 +3223,9 @@ int spectra_pk(
     fprintf(stdout," -> sigma8=%g (computed till k = %g h/Mpc)\n",
             psp->sigma8,
             exp(psp->ln_k[psp->ln_k_size-1])/pba->h);
+    fprintf(stdout," -> S8=%g (computed till k = %g h/Mpc)\n",
+            psp->sigma8*pow((1-pba->Omega0_lambda)/0.3,0.5),
+            exp(psp->ln_k[psp->ln_k_size-1])/pba->h);
 
   if(pba->has_ncdm){
     class_call(spectra_sigma_cb(pba,ppm,psp,8./pba->h,0.,&(psp->sigma8_cb)),
@@ -4231,7 +4234,7 @@ int spectra_output_tk_data(
         }
       }
     }
-  
+
 
   //Necessary because the size could be zero (if psp->tr_size is zero)
   if (tkfull != NULL)
