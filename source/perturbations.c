@@ -4397,6 +4397,9 @@ int perturb_initial_conditions(struct precision * ppr,
                 if(ppt->cs2_is_1 == _TRUE_){
                   cs2=1;
                 }
+                else if(ppt->cs2_is_free == _TRUE_){
+                  cs2=pba->cs2_fld;
+                }
                 else {
                   cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
                 }
@@ -5444,7 +5447,7 @@ int perturb_einstein(
         - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_h_prime]
         + 2. * k2 * s2_squared * y[ppw->pv->index_pt_eta]
         - 9. * a2 * ppw->delta_p;
-
+        // printf("%e %e\n",ppw->pvecmetric[ppw->index_mt_h_prime_prime],2. * k2 * s2_squared * y[ppw->pv->index_pt_eta]);
       /* alpha = (h'+6eta')/2k^2 */
       ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
 
@@ -5868,11 +5871,14 @@ int perturb_total_stress_energy(
         if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
           //assign cs2
           if(a<pba->a_c[n] && ppt->cs2_switch == _TRUE_){
-            cs2 = pba->cs2_fld; //default is 1
+            cs2 = 1; //default is 1
           }
           else{
             if(ppt->cs2_is_1 == _TRUE_){
               cs2=1;
+            }
+            else if(ppt->cs2_is_free == _TRUE_){
+              cs2=pba->cs2_fld;
             }
             else {
               cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
@@ -5919,6 +5925,7 @@ int perturb_total_stress_energy(
           if(ppt->use_big_theta_fld == _TRUE_){
             ppw->rho_plus_p_theta_fld[n] = ppw->pvecback[pba->index_bg_rho_fld+n]*y[ppw->pv->index_pt_big_theta_fld+n];
             y[ppw->pv->index_pt_delta_p_over_rho_fld+n]=cs2*y[ppw->pv->index_pt_delta_fld+n]+3*a_prime_over_a*(cs2-ca2)*y[ppw->pv->index_pt_big_theta_fld+n]/k2;
+            // printf("%e %e\n", 3*a_prime_over_a*(1+w_fld)*(cs2-ca2)*y[ppw->pv->index_pt_big_theta_fld+n]/k2,cs2*y[ppw->pv->index_pt_delta_fld+n]);
           }
           else
           {
@@ -5945,10 +5952,14 @@ int perturb_total_stress_energy(
         }
         // printf("here n %d ppw->delta_rho_fld[n] %e ppw->rho_plus_p_theta_fld[n] %e \n", n, ppw->delta_rho_fld[n],ppw->rho_plus_p_theta_fld[n]);
 
+        // ppw->delta_rho += ppw->delta_rho_fld[n];
         ppw->delta_rho += ppw->delta_rho_fld[n];
         ppw->rho_plus_p_theta += ppw->rho_plus_p_theta_fld[n];
-        ppw->delta_p += cs2 * ppw->delta_rho_fld[n];
-
+        // ppw->delta_p += 0. * ppw->delta_rho_fld[n];
+        rho_plus_p_tot += (1.+w_fld)*ppw->pvecback[pba->index_bg_rho_fld+n];
+        // printf("rho_plus_p_tot %e (1.+w_fld)*ppw->pvecback[pba->index_bg_rho_fld+n] %e\n", rho_plus_p_tot, (1.+w_fld)*ppw->pvecback[pba->index_bg_rho_fld+n]);
+        ppw->delta_p += y[ppw->pv->index_pt_delta_p_over_rho_fld+n]*ppw->pvecback[pba->index_bg_rho_fld+n];
+        // printf("HEYYY\n");
       }
 
     }
@@ -6920,11 +6931,14 @@ int perturb_print_variables(double tau,
         if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
           //assign cs2
           if(a<pba->a_c[n] && ppt->cs2_switch == _TRUE_){
-            cs2[n] = pba->cs2_fld; //default is 1
+            cs2[n] = 1; //default is 1
           }
           else{
             if(ppt->cs2_is_1 == _TRUE_){
               cs2[n]=1;
+            }
+            else if(ppt->cs2_is_free == _TRUE_){
+              cs2[n]=pba->cs2_fld;
             }
             else {
               cs2[n] = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
@@ -6963,7 +6977,7 @@ int perturb_print_variables(double tau,
           // ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
 
         }
-        else cs2[n] = pba->cs2_fld;
+        else cs2[n] = 1;
 
         delta_fld[n] = y[ppw->pv->index_pt_delta_fld+n];
         if(ppt->use_big_theta_fld == _TRUE_) {
@@ -7161,11 +7175,14 @@ int perturb_print_variables(double tau,
           if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
             //assign cs2
             if(a<pba->a_c[n] && ppt->cs2_switch == _TRUE_){
-              cs2[n] = pba->cs2_fld; //default is 1
+              cs2[n] = 1; //default is 1
             }
             else{
               if(ppt->cs2_is_1 == _TRUE_){
                 cs2[n]=1;
+              }
+              else if(ppt->cs2_is_free == _TRUE_){
+                cs2[n]=pba->cs2_fld;
               }
               else {
                 cs2[n] = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);
@@ -8023,11 +8040,14 @@ int perturb_derivs(double tau,
               if(pba->w_fld_parametrization == pheno_axion || pba->w_fld_parametrization == pheno_alternative){
                 //assign cs2
                 if(a<pba->a_c[n] && ppt->cs2_switch == _TRUE_){
-                  cs2 = pba->cs2_fld; //default is 1
+                  cs2 = 1; //default is 1
                 }
                 else{
                   if(ppt->cs2_is_1 == _TRUE_){
                     cs2=1;
+                  }
+                  else if(ppt->cs2_is_free == _TRUE_){
+                    cs2=pba->cs2_fld;
                   }
                   else {
                     cs2 = (2*a*a*(pba->n_pheno_axion[n]-1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k)/(2*a*a*(pba->n_pheno_axion[n]+1)*pow(pba->omega_axion[n]*pow(a,-3*(pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1)),2)+k*k);

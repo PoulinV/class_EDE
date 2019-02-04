@@ -1516,6 +1516,22 @@ int input_read_parameters(
           }
         }
         class_call(parser_read_string(pfc,
+                                      "cs2_is_free",
+                                      &string1,
+                                      &flag1,
+                                      errmsg),
+                    errmsg,
+                    errmsg);
+
+        if (flag1 == _TRUE_){
+          if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+            ppt->cs2_is_free = _TRUE_;
+          }
+          else {
+            ppt->cs2_is_free = _FALSE_;
+          }
+        }
+        class_call(parser_read_string(pfc,
                                       "cs2_switch",
                                       &string1,
                                       &flag1,
@@ -3636,8 +3652,9 @@ int input_default_params(
   pba->wa_fld=0.;
   pba->cs2_fld=1.;
   ppt->cs2_is_1 = _FALSE_;
-  ppt->cs2_switch = _FALSE_;
-  ppt->ca2_switch = _FALSE_;
+  ppt->cs2_is_free = _FALSE_;
+  ppt->cs2_switch = _TRUE_;
+  ppt->ca2_switch = _TRUE_;
   pba->w_fld_parametrization = CPL;
   pba->w_free_function_file_is_dw_over_1_p_w = _FALSE_;
   pba->ca2_max = 10;
