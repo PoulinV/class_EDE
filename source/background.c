@@ -1180,7 +1180,8 @@ int background_init(
 
         F1_1 = gsl_sf_hyperg_0F1(1./2*(1+3*p),signArg);
         F1_2 = gsl_sf_hyperg_0F1(3./2*(1+p),signArg);
-        Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]);
+        // Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]);
+        Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda);
         // Eac = sqrt((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3));
 
         xc = p/Eac;
@@ -1201,15 +1202,21 @@ int background_init(
         }
         else{
           pba->m_fld[i] = pow(1-cos_initial,(1.-n)/2.)*sqrt((1-f)*(6*p+2)*pba->Theta_initial_fld[i]/(n*sin_initial))/xc;
+          // if(n==1)pba->m_fld[i] = 1.54e6;
+          // else if(n==2)pba->m_fld[i] = 1.09e6;
+          // else if(n==3)pba->m_fld[i] = 8.92e5;
           pba->alpha_fld[i] = sqrt(6 * pba->Omega_fld_ac[i])/pba->m_fld[i]/pow(1-cos_initial,n/2);
           Gac =sqrt(_PI_)*gsl_sf_gamma((n+1.)/(2*n))/gsl_sf_gamma(1+1./(2*n))*pow(2,-(n*n+1)/(2*n))*pow(3,0.5*(1./n-1))
           *pow(pba->a_c[i],3-6./(1+n))*pow(pow(pba->a_c[i],6*n/(1+n))+1,0.5*(1./n-1));
           pba->omega_axion[i] = pba->H0*pba->m_fld[i]*pow(1-cos_initial,0.5*(n-1))*Gac;
+          // if(n==1)pba->omega_axion[i] = 341.7;
+          // else if(n==2)pba->omega_axion[i] = 0.0185;
+          // else if(n==3)pba->omega_axion[i] = 1.11e-4;
         }
 
 
 
-        // printf("pba->Omega0_fld %e m %e alpha %e pba->omega_axion[i] %e Gac  %e pba->a_c[i] %e \n", Omega0_fld,pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac,pba->a_c[i]);
+        printf("pba->Omega0_fld %e m %e alpha %e pba->pomega_0[i] %e Gac  %e pba->a_c[i] %e theta_i %e fac %e \n", Omega0_fld,pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i],Gac,pba->a_c[i],pba->Theta_initial_fld[i],pba->Omega_fld_ac[i]/((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]));
         // printf("pba->Omega0_fld %e m %e alpha   %e pba->omega_axion[i] %e Gac  %e pba->a_c[i] %e \n",pba->Omega0_fld, pba->m_fld[i]*1.5e-33,pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac,pba->a_c[i]);
       }
     }

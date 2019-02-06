@@ -186,6 +186,7 @@ struct perturbs
   double ceff2_gdm;/**< 3 x effective squared sound speed for the GDM perturbations */
   double cvis2_gdm;/**< 3 x effective viscosity parameter for the GDM perturbations */
   short cs2_is_1;
+  short ca2_is_slow_roll;
   short cs2_is_free;
   short cs2_switch;
   short ca2_switch;

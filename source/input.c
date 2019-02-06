@@ -1500,6 +1500,22 @@ int input_read_parameters(
 
         class_read_double("cs2_fld",pba->cs2_fld);
         class_call(parser_read_string(pfc,
+                                      "ca2_is_slow_roll",
+                                      &string1,
+                                      &flag1,
+                                      errmsg),
+                    errmsg,
+                    errmsg);
+
+        if (flag1 == _TRUE_){
+          if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+            ppt->ca2_is_slow_roll = _TRUE_;
+          }
+          else {
+            ppt->ca2_is_slow_roll = _FALSE_;
+          }
+        }
+        class_call(parser_read_string(pfc,
                                       "cs2_is_1",
                                       &string1,
                                       &flag1,
@@ -3651,6 +3667,7 @@ int input_default_params(
   pba->w0_fld=-1.;
   pba->wa_fld=0.;
   pba->cs2_fld=1.;
+  ppt->ca2_is_slow_roll = _FALSE_;
   ppt->cs2_is_1 = _FALSE_;
   ppt->cs2_is_free = _FALSE_;
   ppt->cs2_switch = _TRUE_;

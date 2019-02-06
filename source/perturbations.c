@@ -4411,7 +4411,8 @@ int perturb_initial_conditions(struct precision * ppr,
             //   if(a > 3*pba->a_c[n]) cs2=w_fld;//to avoid numerical instability, we slighlty adjust the value of cs2 and the time of the transition. Checked that it has negligeable impact.
             // }
             // printf("%e %e %e\n", cs2,w_fld,pba->n_pheno_axion[n]);
-            ppw->pv->y[ppw->pv->index_pt_delta_fld+n] = - ktau_two/4.*(1.+w_fld)*(4.-3.*cs2)/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC: curvature
+            // ppw->pv->y[ppw->pv->index_pt_delta_fld+n] = - ktau_two/4.*(1.+w_fld)*(4.-3.*cs2)/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC: curvature
+            ppw->pv->y[ppw->pv->index_pt_delta_fld+n] = 0; /* from 1004.5509 */ //TBC: curvature
             ppw->pv->y[ppw->pv->index_pt_delta_p_over_rho_fld+n] = 0; /* will be automatically assigned later*/ //TBC: curvature
             if(ppt->use_big_theta_fld == _TRUE_) ppw->pv->y[ppw->pv->index_pt_big_theta_fld+n] = - (1+w_fld)*k*ktau_three/4.*cs2/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared;
             else ppw->pv->y[ppw->pv->index_pt_theta_fld+n] = - k*ktau_three/4.*cs2/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC:curvature
@@ -5887,14 +5888,19 @@ int perturb_total_stress_energy(
 
           //assign ca2
           if(a<pba->a_c[n] && ppt->ca2_switch == _TRUE_){
-            center = 3*(1/pba->a_c[n]-1);
-            z = 1/a-1;
-            width = center/2;//found to work well at capturing the sharp transition
-            ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
-            a_over_ac = a/pba->a_c[n];
-            ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
-                  /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
-            ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+            if(ppt->ca2_is_slow_roll == _TRUE_){
+              ca2 = -7./3;
+            }
+            else{
+              center = 3*(1/pba->a_c[n]-1);
+              z = 1/a-1;
+              width = center/2;//found to work well at capturing the sharp transition
+              ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+              a_over_ac = a/pba->a_c[n];
+              ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                    /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+              ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+            }
           }
           else{
 
@@ -6947,14 +6953,19 @@ int perturb_print_variables(double tau,
 
           //assign ca2
           if(a<pba->a_c[n] && ppt->ca2_switch == _TRUE_){
-            center = 3*(1/pba->a_c[n]-1);
-            z = 1/a-1;
-            width = center/2;//found to work well at capturing the sharp transition
-            ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
-            a_over_ac = a/pba->a_c[n];
-            ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
-                  /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
-            ca2[n] = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+              if(ppt->ca2_is_slow_roll == _TRUE_){
+                ca2[n] = -7./3;
+              }
+              else{
+              center = 3*(1/pba->a_c[n]-1);
+              z = 1/a-1;
+              width = center/2;//found to work well at capturing the sharp transition
+              ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+              a_over_ac = a/pba->a_c[n];
+              ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                    /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+              ca2[n] = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+            }
           }
           else{
 
@@ -7191,14 +7202,19 @@ int perturb_print_variables(double tau,
 
             //assign ca2
             if(a<pba->a_c[n] && ppt->ca2_switch == _TRUE_){
-              center = 3*(1/pba->a_c[n]-1);
-              z = 1/a-1;
-              width = center/2;//found to work well at capturing the sharp transition
-              ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
-              a_over_ac = a/pba->a_c[n];
-              ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
-                    /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
-              ca2[n] = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+              if(ppt->ca2_is_slow_roll == _TRUE_){
+                ca2[n] = -7./3;
+              }
+              else{
+                center = 3*(1/pba->a_c[n]-1);
+                z = 1/a-1;
+                width = center/2;//found to work well at capturing the sharp transition
+                ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+                a_over_ac = a/pba->a_c[n];
+                ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                      /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+                ca2[n] = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+              }
             }
             else{
 
@@ -8056,14 +8072,20 @@ int perturb_derivs(double tau,
 
                 //assign ca2
                 if(a<pba->a_c[n] && ppt->ca2_switch == _TRUE_){
-                  center = 3*(1/pba->a_c[n]-1);
-                  z = 1/a-1;
-                  width = center/2;//found to work well at capturing the sharp transition
-                  ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
-                  a_over_ac = a/pba->a_c[n];
-                  ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
-                        /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
-                  ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+                  if(ppt->ca2_is_slow_roll == _TRUE_){
+                    ca2 = -7./3;
+                  }
+                  else{
+                    center = 3*(1/pba->a_c[n]-1);
+                    z = 1/a-1;
+                    width = center/2;//found to work well at capturing the sharp transition
+                    ca2before = -(3*pba->n_pheno_axion[n]+1)/(pba->n_pheno_axion[n]+1);
+                    a_over_ac = a/pba->a_c[n];
+                    ca2after = (pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))*(-1+pba->n_pheno_axion[n])-pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3)*(1+3*pba->n_pheno_axion[n]))
+                          /(pow(a,3)*pow(a_over_ac,3*pba->n_pheno_axion[n]/(1+pba->n_pheno_axion[n]))+pow(a_over_ac,3/(1+pba->n_pheno_axion[n]))*pow(pba->a_c[n],3))/(1+pba->n_pheno_axion[n]);
+                    ca2 = (ca2before - ca2after)*(tanh((z - center)/width) + 1)/2 + ca2after;
+                    // ca2 = ca2before;
+                  }
                 }
                 else{
 
