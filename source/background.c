@@ -1216,7 +1216,7 @@ int background_init(
 
 
 
-        printf("pba->Omega0_fld %e m %e alpha %e pba->pomega_0[i] %e Gac  %e pba->a_c[i] %e theta_i %e fac %e \n", Omega0_fld,pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i],Gac,pba->a_c[i],pba->Theta_initial_fld[i],pba->Omega_fld_ac[i]/((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]));
+        // printf("pba->Omega0_fld %e m %e alpha %e pba->pomega_0[i] %e Gac  %e pba->a_c[i] %e theta_i %e fac %e \n", Omega0_fld,pba->m_fld[i],pba->alpha_fld[i],pba->omega_axion[i],Gac,pba->a_c[i],pba->Theta_initial_fld[i],pba->Omega_fld_ac[i]/((pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda+pba->Omega_fld_ac[i]));
         // printf("pba->Omega0_fld %e m %e alpha   %e pba->omega_axion[i] %e Gac  %e pba->a_c[i] %e \n",pba->Omega0_fld, pba->m_fld[i]*1.5e-33,pba->alpha_fld[i],pba->omega_axion[i]*pow(pba->a_c[i],-3*wn)*pba->a_c[i],Gac,pba->a_c[i]);
       }
     }
@@ -2186,7 +2186,7 @@ int background_solve(
   bpaw.pba = pba;
   class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
   bpaw.pvecback = pvecback;
-
+  double stepsize = ppr->back_integration_stepsize;
   /** - allocate vector of quantities to be integrated */
   class_alloc(pvecback_integration,pba->bi_size*sizeof(double),pba->error_message);
 
@@ -2227,8 +2227,8 @@ int background_solve(
                pba->error_message,
                pba->error_message);
 
-    if ((pvecback_integration[pba->index_bi_a]*(1.+ppr->back_integration_stepsize)) < pba->a_today) {
-      tau_end = tau_start + ppr->back_integration_stepsize / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
+    if ((pvecback_integration[pba->index_bi_a]*(1.+stepsize)) < pba->a_today) {
+      tau_end = tau_start + stepsize / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
       /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
     }
     else {

@@ -4412,7 +4412,7 @@ int perturb_initial_conditions(struct precision * ppr,
             // }
             // printf("%e %e %e\n", cs2,w_fld,pba->n_pheno_axion[n]);
             // ppw->pv->y[ppw->pv->index_pt_delta_fld+n] = - ktau_two/4.*(1.+w_fld)*(4.-3.*cs2)/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC: curvature
-            ppw->pv->y[ppw->pv->index_pt_delta_fld+n] = 0; /* from 1004.5509 */ //TBC: curvature
+            ppw->pv->y[ppw->pv->index_pt_delta_fld+n] = - ktau_two/4.*(1.+w_fld)*(4.-3.*cs2)/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC: curvature
             ppw->pv->y[ppw->pv->index_pt_delta_p_over_rho_fld+n] = 0; /* will be automatically assigned later*/ //TBC: curvature
             if(ppt->use_big_theta_fld == _TRUE_) ppw->pv->y[ppw->pv->index_pt_big_theta_fld+n] = - (1+w_fld)*k*ktau_three/4.*cs2/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared;
             else ppw->pv->y[ppw->pv->index_pt_theta_fld+n] = - k*ktau_three/4.*cs2/(4.-6.*w_fld+3.*cs2) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC:curvature
@@ -4711,7 +4711,6 @@ int perturb_initial_conditions(struct precision * ppr,
           ppw->pv->y[ppw->pv->index_pt_delta_fld+n] += 3*(1.+w_fld)*a_prime_over_a*alpha;
           if(ppt->use_big_theta_fld == _TRUE_) ppw->pv->y[ppw->pv->index_pt_big_theta_fld+n] += (1+w_fld)*k*k*alpha;
           else ppw->pv->y[ppw->pv->index_pt_theta_fld+n] += k*k*alpha;
-          ppw->pv->y[ppw->pv->index_pt_delta_fld+n] += 0;//to be corrected eventually
         }
       }
 
@@ -7124,8 +7123,9 @@ int perturb_print_variables(double tau,
     }
 
     /* converting synchronous variables to newtonian ones */
-    if (ppt->gauge == synchronous) {
-
+    if (ppt->gauge == synchronous && ppt->gauge_output==newtonian_output) {
+      /*nb: this is the default in standard class*/
+      /*it will require modification for the EDE*/
       /* density and velocity perturbations (comment out if you wish to keep synchronous variables) */
 
       delta_g -= 4. * pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;

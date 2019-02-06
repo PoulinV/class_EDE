@@ -596,6 +596,21 @@ int input_read_parameters(
     }
   }
 
+  class_call(parser_read_string(pfc,"gauge_output",&string1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+
+  if (flag1 == _TRUE_) {
+
+    if ((strstr(string1,"newtonian") != NULL) || (strstr(string1,"Newtonian") != NULL) || (strstr(string1,"new") != NULL)) {
+      ppt->gauge_output = newtonian_output;
+    }
+
+    if ((strstr(string1,"synchronous") != NULL) || (strstr(string1,"sync") != NULL) || (strstr(string1,"Synchronous") != NULL)) {
+      ppt->gauge_output = synchronous_output;
+    }
+  }
+
   /** (a) background parameters */
 
   /** - scale factor today (arbitrary) */
@@ -1328,7 +1343,7 @@ int input_read_parameters(
                    wn = (pba->n_pheno_axion[n]-1)/(pba->n_pheno_axion[n]+1);
                    if(pba->Omega_many_fld[n] == 0){
                      if(flag5 == _TRUE_){
-                          printf("Omega_r %e\n", (pba->Omega0_g+pba->Omega0_ur));
+                          // printf("Omega_r %e\n", (pba->Omega0_g+pba->Omega0_ur));
                          Omega_tot_ac = (pba->Omega0_cdm+pba->Omega0_b)*pow(pba->a_c[n],-3)+(pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[n],-4)+pba->Omega0_lambda;
                          class_test(pba->Omega_fld_ac[n]==1.0,"you cannot have pba->Omega_fld_ac[n]=1.0!",errmsg,errmsg);
                          if(pba->Omega_fld_ac[n]!=1.0)pba->Omega_fld_ac[n] = Omega_tot_ac*pba->Omega_fld_ac[n]/(1-pba->Omega_fld_ac[n]);
@@ -1336,7 +1351,7 @@ int input_read_parameters(
                      }
                      pba->Omega_many_fld[n] = 2*pba->Omega_fld_ac[n]/(pow(pba->a_today/pba->a_c[n],3*(wn+1))+1);
                      Omega_tot += pba->Omega_many_fld[n];
-                     printf("pba->Omega_many_fld[n] %e\n", pba->Omega_many_fld[n]);
+                     // printf("pba->Omega_many_fld[n] %e\n", pba->Omega_many_fld[n]);
                     }
                     else if(pba->Omega_fld_ac[n] == 0){
                       pba->Omega_fld_ac[n] = pba->Omega_many_fld[n]*(pow(pba->a_today/pba->a_c[n],3*(wn+1))+1)/2;
@@ -3772,6 +3787,7 @@ int input_default_params(
   ppt->k_max_for_pk=1.;
 
   ppt->gauge=synchronous;
+  ppt->gauge_output=synchronous_output;
 
   ppt->k_output_values_num=0;
   ppt->store_perturbations = _FALSE_;
