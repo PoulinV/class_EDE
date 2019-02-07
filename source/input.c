@@ -314,7 +314,7 @@ int input_init(
       fzw.unknown_parameters_index[counter]=pfc->size+counter;
       // substitute the name of the target parameter with the name of the corresponding unknown parameter
       strcpy(fzw.fc.name[fzw.unknown_parameters_index[counter]],unknown_namestrings[index_target]);
-      //printf("%d, %d: %s\n",counter,index_target,target_namestrings[index_target]);
+      if(input_verbose>1)printf("%d, %d: %s\n",counter,index_target,target_namestrings[index_target]);
     }
 
     if (unknown_parameters_size == 1){
@@ -1383,7 +1383,7 @@ int input_read_parameters(
 
                // pba->Theta_initial_fld[0]/=pba->alpha_fld[0];
                class_alloc(pba->a_c,sizeof(double)*pba->n_fld,pba->error_message);
-               // class_read_double("a_c_to_shoot",pba->a_c[0]);
+               class_read_double("a_c_to_shoot",pba->a_c[0]);
                class_alloc(pba->Omega_many_fld,sizeof(double)*pba->n_fld,pba->error_message);
                class_alloc(pba->Omega_fld_ac,sizeof(double)*pba->n_fld,pba->error_message);
                class_alloc(pba->omega_axion,sizeof(double)*pba->n_fld,pba->error_message);
@@ -1481,9 +1481,9 @@ int input_read_parameters(
           if(flag2==_TRUE_){
             pba->Omega0_fld = param2*pba->Omega0_cdm;
             Omega_tot += pba->Omega0_fld;
-            pba->n_fld = 1;
           }
         }
+        if(pba->Omega0_fld >0)  pba->n_fld = 1;
      }
 
 
@@ -1608,6 +1608,7 @@ int input_read_parameters(
             class_read_double("c_gamma_over_c_fld",pba->c_gamma_over_c_fld);
           }
           else {
+
             pba->use_ppf = _FALSE_;
           }
         }
@@ -4758,9 +4759,10 @@ int input_get_guess(double *xguess,
       //   xguess[index_guess] = pow(Omega_m/A,1./3);
       // }
       dxdy[index_guess] = xguess[index_guess]/10;
+      // printf("xguess = %g\n",xguess[index_guess]);
+
       break;
     }
-    //printf("xguess = %g\n",xguess[index_guess]);
   }
 
   for (i=0; i<pfzw->fc.size; i++) {
