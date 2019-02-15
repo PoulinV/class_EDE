@@ -453,6 +453,13 @@ int background_functions(
   /** - compute relativistic density to total density ratio */
   pvecback[pba->index_bg_Omega_r] = rho_r / rho_tot;
 
+  if(pba->has_fld == _TRUE_){
+    for(n = 0 ; n<pba->n_fld ; n++){
+    pvecback[pba->index_bg_Omega_fld+n] = pvecback[pba->index_bg_rho_fld+n] / rho_tot;
+    // printf("%e\n", pvecback[pba->index_bg_Omega_fld+n]);
+    }
+  }
+
   /** - compute other quantities in the exhaustive, redundant format */
   if (return_format == pba->long_info) {
 
@@ -532,7 +539,7 @@ int background_w_fld(
   else if(pba->w_fld_parametrization == pheno_axion){
     if(n<50)w = (pba->n_pheno_axion[n]-1)/(1+pba->n_pheno_axion[n]); //e.o.s. once the field starts oscillating
     else w =1;
-    *w_fld = (1+w)/(1+pow(pba->a_c[n]/a,3*(1+w)))-1+1e-10; //we add 1e-10 to avoid a crashing of the solver. Checked to be totally invisible.
+    *w_fld = (1+w)/(1+pow(pba->a_c[n]/a,3*(1+w)))-1;
     // *w_fld = (pow(a/ pba->a_today,6) - pow(pba->a_c/ pba->a_today,6))/(pow(a/ pba->a_today,6) + pow(pba->a_c/ pba->a_today,6));
     *dw_over_da_fld = 3*pow(a/pba->a_today,-1-3*(1+w))*pba->a_c[n]/ pba->a_today*(1+w)*(1+w)/pow((1 + pba->a_c[n]/pba->a_today*pow(a/ pba->a_today,-3*(1+w))),2);
     *integral_fld = -(3*(1 + w)*(3*w*log(a/pba->a_today) + log(pow(a/pba->a_today,3) + pow(pba->a_c[n]/ pba->a_today,3)*pow(pba->a_c[n]/a,3*w)))/(3 + 3*w));
@@ -1145,8 +1152,12 @@ int background_init(
      // printf(" (pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[0],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[0],-3) %e pba->Omega_fld_ac[0] %e\n",(pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[0],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[0],-3),pba->Omega_fld_ac[0]);
       pba->Omega_many_fld[0] = 2*pba->Omega_fld_ac[0]/(pow(pba->a_c[0],-3*wn-3)+1);
       pba->Omega0_lambda -= pba->Omega_many_fld[0]; // we want a flat universe today.
-      pba->omega_axion[0] = pba->H0*sqrt(_PI_)*pow(2,-(n*n+1)/(2*n))*pow(2*pow(pba->a_c[0],3*(1+wn))*pba->Omega_fld_ac[0]/(1+pow(pba->a_c[0],3*(1+wn))),(n-1)/(2*n))*gsl_sf_gamma((n+1.)/(2*n))*pow(pba->m_fld[0]*pba->alpha_fld[0],1./n)/(pba->alpha_fld[0]*gsl_sf_gamma(1+1./(2*n)));
+      // pba->omega_axion[0] = pba->H0*sqrt(_PI_)*pow(2,-(n*n+1)/(2*n))*pow(2*pow(pba->a_c[0],3*(1+wn))*pba->Omega_fld_ac[0]/(1+pow(pba->a_c[0],3*(1+wn))),(n-1)/(2*n))*gsl_sf_gamma((n+1.)/(2*n))*pow(pba->m_fld[0]*pba->alpha_fld[0],1./n)/(pba->alpha_fld[0]*gsl_sf_gamma(1+1./(2*n)));
+      Gac =sqrt(_PI_)*gsl_sf_gamma((n+1.)/(2*n))/gsl_sf_gamma(1+1./(2*n))*pow(2,-(n*n+1)/(2*n))*pow(3,0.5*(1./n-1))
+      *pow(pba->a_c[0],3-6./(1+n))*pow(pow(pba->a_c[0],6*n/(1+n))+1,0.5*(1./n-1));
+      pba->omega_axion[0] = pba->H0*pba->m_fld[0]*pow(1-cos_initial,0.5*(n-1))*Gac;
       // printf("pba->Omega_many_fld[0] %e (pow(pba->a_c[0],-3*(wn+1))+1) %e wn %e\n",pba->Omega_many_fld[0],pow(pba->a_c[0],-3*wn-3)+1,wn);
+      // printf("fac %e ac %e\n",pba->Omega_fld_ac[0]/(pba->Omega_fld_ac[0]+(pba->Omega0_g+pba->Omega0_ur)*pow(pba->a_c[i],-4)+(pba->Omega0_b+pba->Omega0_cdm)*pow(pba->a_c[i],-3)+pba->Omega0_lambda),pba->a_c[0]);
     }
     else{
       for(i =0 ;i<pba->n_fld;i++){
@@ -1221,7 +1232,10 @@ int background_init(
       }
     }
 
-
+    if(pba->has_fld == _TRUE_){
+      pba->f_ede = 0.0;
+      pba->log10_z_c = 0.0;
+    }
 
 
 
@@ -1496,6 +1510,7 @@ int background_indices(
 
   /* - index for fluid */
   class_define_index(pba->index_bg_rho_fld,pba->has_fld,index_bg,pba->n_fld);
+  class_define_index(pba->index_bg_Omega_fld,pba->has_fld,index_bg,pba->n_fld);
   class_define_index(pba->index_bg_w_fld,pba->has_fld,index_bg,pba->n_fld);
   class_define_index(pba->index_bg_dw_fld,pba->has_fld,index_bg,pba->n_fld);
 
@@ -2183,6 +2198,7 @@ int background_solve(
   double tau_of_ac;
   int n;
   double Omega_m, Omega_r;
+  double z_c_new, f_ede_new;
   bpaw.pba = pba;
   class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
   bpaw.pvecback = pvecback;
@@ -2354,7 +2370,18 @@ int background_solve(
     class_call(background_functions(pba,pData+i*pba->bi_size, pba->long_info, pvecback),
                pba->error_message,
                pba->error_message);
-
+   if(pba->w_fld_parametrization == pheno_axion){
+     /* Scalar field critical redshift and fractional energy density at z_c calculations */
+     z_c_new = pba->z_table[i];
+     f_ede_new = pvecback[pba->index_bg_Omega_fld+0];
+     // printf("pba->f_ede %e\n", pba->f_ede);
+     if(f_ede_new > pba->f_ede){
+       // printf("here pba->f_ede %e pvecback[pba->index_bg_Omega_fld+0] %e\n", pba->f_ede,pvecback[pba->index_bg_Omega_fld+0]);
+       pba->log10_z_c = log10(z_c_new);
+       // pba->axion_ac = 1/z_c_new-1;
+       pba->f_ede = f_ede_new;
+     }
+   }
     /* -> compute growth functions (valid in dust universe) */
 
     /* Normalise D(z=0)=1 and construct f = D_prime/(aHD) */
@@ -2421,7 +2448,9 @@ int background_solve(
     if(pba->has_ur)Omega_r+=pba->Omega0_ur;
     printf(" -> matter radiaton equality at z = %f \n",Omega_m/Omega_r);
   }
-
+  // if(pba->w_fld_parametrization == pheno_axion){
+  // printf("     -> Exact log10(z_c) = %e \t f_ede = %e\n", pba->log10_z_c, pba->f_ede);
+  // }
   if (pba->background_verbose > 2) {
     if ((pba->has_dcdm == _TRUE_)&&(pba->has_dr == _TRUE_)){
       printf("    Decaying Cold Dark Matter details: (DCDM --> DR)\n");
@@ -2808,6 +2837,8 @@ int background_output_titles(struct background * pba,
     for (n=0; n<pba->n_fld; n++){
       sprintf(tmp,"(.)rho_fld[%d]",n);
       class_store_columntitle(titles,tmp,_TRUE_);
+      sprintf(tmp,"(.)Omega_fld[%d]",n);
+      class_store_columntitle(titles,tmp,_TRUE_);
       sprintf(tmp,"(.)w_fld[%d]",n);
       class_store_columntitle(titles,tmp,_TRUE_);
       if(pba->w_free_function_file_is_ca2 == _TRUE_){
@@ -2883,6 +2914,7 @@ int background_output_data(
     if(pba->has_fld == _TRUE_){
       for (n=0; n<pba->n_fld; n++){
         class_store_double(dataptr,pvecback[pba->index_bg_rho_fld+n],pba->has_fld,storeidx);
+        class_store_double(dataptr,pvecback[pba->index_bg_Omega_fld+n],pba->has_fld,storeidx);
         class_store_double(dataptr,pvecback[pba->index_bg_w_fld+n],pba->has_fld,storeidx);
         if(pba->w_free_function_file_is_dw_over_1_p_w == _TRUE_){
           class_store_double(dataptr,pvecback[pba->index_bg_dw_fld+n],pba->has_fld,storeidx);
