@@ -1557,6 +1557,10 @@ cdef class Class:
                 value = self.ba.Omega0_ncdm_tot*self.ba.h*self.ba.h*93.14
             elif name == 'Neff':
                 value = self.ba.Neff
+            elif name == 'f_ede':
+                value = self.ba.f_ede
+            elif name == 'log10_z_c':
+                value = self.ba.log10_z_c
             elif name == 'Omega_m':
                 value = (self.ba.Omega0_b + self.ba.Omega0_cdm+
                          self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm)
