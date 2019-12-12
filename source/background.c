@@ -2375,6 +2375,8 @@ int background_solve(
      z_c_new = pba->z_table[i];
      f_ede_new = pvecback[pba->index_bg_Omega_fld+0];
      // printf("pba->f_ede %e\n", pba->f_ede);
+     // printf("z_c_new %e pba->f_ede %e pvecback[pba->index_bg_Omega_fld+0] %e\n",z_c_new,pba->f_ede,pvecback[pba->index_bg_Omega_fld+0]);
+
      if(f_ede_new > pba->f_ede){
        // printf("here pba->f_ede %e pvecback[pba->index_bg_Omega_fld+0] %e\n", pba->f_ede,pvecback[pba->index_bg_Omega_fld+0]);
        pba->log10_z_c = log10(z_c_new);
@@ -2447,6 +2449,9 @@ int background_solve(
     Omega_r = pba->Omega0_g;
     if(pba->has_ur)Omega_r+=pba->Omega0_ur;
     printf(" -> matter radiaton equality at z = %f \n",Omega_m/Omega_r);
+    if(pba->has_fld == _TRUE_){
+      printf("f_ede(z_c) %e log10zc = %e \n",pba->f_ede,pba->log10_z_c);
+    }
   }
   // if(pba->w_fld_parametrization == pheno_axion){
   // printf("     -> Exact log10(z_c) = %e \t f_ede = %e\n", pba->log10_z_c, pba->f_ede);
